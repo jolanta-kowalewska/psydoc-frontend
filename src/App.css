@@ -1,0 +1,160 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding: 32px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 32px;
+  align-items: center;
+  padding: 36px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(170, 59, 255, 0.16), rgba(255, 255, 255, 0.9));
+  box-shadow: var(--shadow);
+}
+
+.hero-copy {
+  text-align: left;
+}
+
+.eyebrow {
+  display: inline-flex;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.hero-copy h1 {
+  margin: 0 0 18px;
+  font-size: clamp(2.5rem, 3vw, 4rem);
+  line-height: 1.03;
+}
+
+.hero-copy p {
+  margin: 0 0 24px;
+  font-size: 1.05rem;
+  color: var(--text);
+  max-width: 44rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.hero-actions button {
+  appearance: none;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(170, 59, 255, 0.18);
+}
+
+.hero-counter {
+  font-size: 1rem;
+  color: var(--text-h);
+}
+
+.hero-visual img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0 24px 50px -20px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  padding: 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: rgba(15, 23, 42, 0.08) 0 16px 40px -24px;
+}
+
+.feature-card h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+
+.feature-card p {
+  margin: 12px 0 0;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.resource-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.resource-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 220px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  text-decoration: none;
+  color: var(--text-h);
+  background: var(--social-bg);
+  border: 1px solid rgba(170, 59, 255, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.resource-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.resource-card img {
+  width: 26px;
+  height: 26px;
+}
+
+.resource-card span {
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .hero-panel {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .hero-copy {
+    margin: 0 auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
