@@ -18,9 +18,9 @@ This project uses Vite environment variables for AWS Cognito and API configurati
 Example content:
 
 ```dotenv
-VITE_USER_POOL_ID=eu-central-1_2QebRHJZk
-VITE_USER_POOL_CLIENT_ID=1i3qeuqgv8hu1hm6i0kmgmfu5k
-VITE_API_URL=https://wlbk6tig56.execute-api.eu-central-1.amazonaws.com/dev
+VITE_USER_POOL_ID=your_user_pool_id
+VITE_USER_POOL_CLIENT_ID=your_user_pool_client_id
+VITE_API_URL=https://your-api-id.execute-api.eu-central-1.amazonaws.com/dev
 ```
 
 A sample template is available in `.env.local.example`.
