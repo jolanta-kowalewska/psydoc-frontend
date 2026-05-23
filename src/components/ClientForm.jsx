@@ -18,26 +18,27 @@ const INFO_CLAUSE_TEXT = `Zapoznałem/am się z klauzulą informacyjną zawieraj
 - celów przetwarzania danych,
 - praw pacjenta w zakresie przetwarzania danych osobowych.`
 
+function parsePeselDate(pesel) {
+  if (pesel?.length !== 11) return null
+  let year = parseInt(pesel.substring(0, 2))
+  let month = parseInt(pesel.substring(2, 4))
+  const day = parseInt(pesel.substring(4, 6))
+
+  if (month > 80) { year += 1800; month -= 80 }
+  else if (month > 60) { year += 2200; month -= 60 }
+  else if (month > 40) { year += 2100; month -= 40 }
+  else if (month > 20) { year += 2000; month -= 20 }
+  else { year += 1900 }
+
+  const d = new Date(year, month - 1, day)
+  if (isNaN(d.getTime())) return null
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
 function isMinor(pesel, birthDate) {
-  let dob = null
-
-  if (pesel?.length === 11) {
-    let year = parseInt(pesel.substring(0, 2))
-    let month = parseInt(pesel.substring(2, 4))
-    let day = parseInt(pesel.substring(4, 6))
-
-    if (month > 80) { year += 1800; month -= 80 }
-    else if (month > 60) { year += 2200; month -= 60 }
-    else if (month > 40) { year += 2100; month -= 40 }
-    else if (month > 20) { year += 2000; month -= 20 }
-    else { year += 1900 }
-
-    dob = new Date(year, month - 1, day)
-  } else if (birthDate) {
-    dob = new Date(birthDate)
-  }
-
-  if (!dob) return false
+  const dateStr = parsePeselDate(pesel) ?? birthDate
+  if (!dateStr) return false
+  const dob = new Date(dateStr)
   const today = new Date()
   const age = today.getFullYear() - dob.getFullYear()
   const m = today.getMonth() - dob.getMonth()
@@ -79,7 +80,14 @@ export default function ClientForm({ onSuccess }) {
 
   const handleClientChange = (e) => {
     const { name, value } = e.target
-    setClientData((prev) => ({ ...prev, [name]: value }))
+    setClientData((prev) => {
+      const next = { ...prev, [name]: value }
+      if (name === 'pesel') {
+        const parsed = parsePeselDate(value)
+        if (parsed) next.birthDate = parsed
+      }
+      return next
+    })
   }
 
   const handleGuardianChange = (e) => {
