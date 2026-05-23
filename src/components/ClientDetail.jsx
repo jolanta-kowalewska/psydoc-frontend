@@ -157,7 +157,8 @@ export default function ClientDetail() {
     setSessionsLoading(true)
     api.get(`/sessions?clientId=${clientId}`)
       .then((res) => {
-        const sorted = (res.data.sessions ?? []).sort((a, b) => b.date.localeCompare(a.date))
+        const sessions = (res.data.sessions ?? []).filter(s => s.PK?.startsWith('SESSION#'))
+        const sorted = sessions.sort((a, b) => b.date.localeCompare(a.date))
         setSessions(sorted)
       })
       .catch(() => {})
