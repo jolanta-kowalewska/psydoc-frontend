@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 
@@ -100,52 +100,27 @@ function SessionForm({ clientId, onCreated, onCancel }) {
   )
 }
 
-function SessionItem({ session, onSigned }) {
-  const [signing, setSigning] = useState(false)
-  const [error, setError] = useState(null)
-
+function SessionItem({ session, clientId }) {
   const sessionId = session.PK?.replace('SESSION#', '') ?? session.id
-
-  const handleSign = async () => {
-    setSigning(true)
-    setError(null)
-    try {
-      await api.post(`/sessions/${sessionId}/sign`)
-      onSigned()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSigning(false)
-    }
-  }
-
   const isSigned = session.state === 'signed'
 
   return (
-    <li className="py-4 space-y-2">
-      <div className="flex items-center justify-between">
+    <li>
+      <Link
+        to={`/clients/${clientId}/sessions/${sessionId}`}
+        className="flex items-center justify-between py-4 hover:text-[var(--accent)] transition-colors group"
+      >
         <div className="flex items-center gap-3">
-          <span className="font-medium text-[var(--text-h)]">{session.date}</span>
+          <span className="font-medium text-[var(--text-h)] group-hover:text-[var(--accent)]">
+            {session.date}
+          </span>
           <span className="text-sm text-[var(--text)] capitalize">{session.sessionType}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full ${isSigned ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
             {isSigned ? 'podpisana' : 'szkic'}
           </span>
         </div>
-        {!isSigned && (
-          <button
-            onClick={handleSign}
-            disabled={signing}
-            className="text-sm px-3 py-1 border border-[var(--border)] text-[var(--text-h)] rounded-lg hover:bg-[var(--code-bg)] disabled:opacity-50 transition-colors"
-          >
-            {signing ? 'Podpisuję…' : 'Podpisz'}
-          </button>
-        )}
-      </div>
-      {isSigned && (
-        <p className="text-xs text-[var(--text)]">Podpisano: {session.signedAt?.slice(0, 16).replace('T', ' ')}</p>
-      )}
-      <p className="text-sm text-[var(--text)] whitespace-pre-wrap">{session.notes}</p>
-      {error && <p className="text-red-500 text-xs">{error}</p>}
+        <span className="text-[var(--text)] text-sm">→</span>
+      </Link>
     </li>
   )
 }
@@ -258,7 +233,7 @@ export default function ClientDetail() {
               <SessionItem
                 key={s.PK ?? s.id}
                 session={s}
-                onSigned={loadSessions}
+                clientId={clientId}
               />
             ))}
           </ul>

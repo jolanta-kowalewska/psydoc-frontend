@@ -5,6 +5,7 @@ import MainApp from './components/MainApp'
 import ClientList from './components/ClientList'
 import ClientDetail from './components/ClientDetail'
 import ClientForm from './components/ClientForm'
+import SessionDetail from './components/SessionDetail'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
               <Route path="/clients" element={<ClientList />} />
               <Route path="/clients/new" element={<ClientForm />} />
               <Route path="/clients/:clientId" element={<ClientDetail />} />
+              <Route path="/clients/:clientId/sessions/:sessionId" element={<SessionDetail />} />
             </Routes>
           </MainApp>
         </BrowserRouter>
