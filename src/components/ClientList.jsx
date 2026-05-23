@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/client'
 
 export default function ClientList() {
@@ -42,15 +42,20 @@ export default function ClientList() {
       {!loading && !error && clients.length > 0 && (
         <ul className="divide-y divide-[var(--border)]">
           {clients.map((client) => (
-            <li key={client.id}>
-              <button
-                onClick={() => navigate(`/clients/${client.id}`)}
-                className="w-full text-left py-4 hover:text-[var(--accent)] transition-colors"
+            <li key={client.clientId}>
+              <Link
+                to={`/clients/${client.clientId}`}
+                className="flex items-baseline py-4 hover:text-[var(--accent)] transition-colors"
               >
                 <span className="font-medium text-[var(--text-h)]">
-                  {client.name}
+                  {client.firstName} {client.lastName}
                 </span>
-              </button>
+                {client.birthDate && (
+                  <span className="text-sm text-[var(--text)] ml-2">
+                    ur. {client.birthDate}
+                  </span>
+                )}
+              </Link>
             </li>
           ))}
         </ul>
