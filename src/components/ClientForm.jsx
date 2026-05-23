@@ -148,22 +148,22 @@ export default function ClientForm({ onSuccess }) {
 
     setLoading(true)
     try {
-      const consents = [
-        { type: 'service', text: CONSENT_TEXT },
-        { type: 'rodo_standard', text: RODO_TEXT },
-        { type: 'rodo_health', text: HEALTH_DATA_TEXT },
-        { type: 'info_clause', text: INFO_CLAUSE_TEXT },
+      const consentTexts = [
+        CONSENT_TEXT,
+        RODO_TEXT,
+        HEALTH_DATA_TEXT,
+        INFO_CLAUSE_TEXT,
       ]
 
       if (consentData.transcription) {
-        consents.push({ type: 'transcription', text: 'Zgoda na nagrywanie sesji' })
+        consentTexts.push('Zgoda na nagrywanie sesji')
       }
 
-      for (const consent of consents) {
+      for (const consentText of consentTexts) {
         await api.post(`/clients/${clientId}/consents`, {
           clientId,
-          consentType: consent.type,
-          consentText: consent.text,
+          consentType: 'individual',
+          consentText,
         })
       }
 
