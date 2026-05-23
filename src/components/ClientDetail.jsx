@@ -9,6 +9,8 @@ const SESSION_TYPES = [
   'grupowa',
 ]
 
+const NOTES_LIMIT = 10_000
+
 function SessionForm({ clientId, onCreated, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({ sessionType: SESSION_TYPES[0], date: today, notes: '' })
@@ -17,6 +19,7 @@ function SessionForm({ clientId, onCreated, onCancel }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    if (name === 'notes' && value.length > NOTES_LIMIT) return
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
@@ -35,15 +38,18 @@ function SessionForm({ clientId, onCreated, onCancel }) {
     }
   }
 
+  const notesLen = form.notes.length
+  const nearLimit = notesLen > NOTES_LIMIT * 0.9
+
   return (
-    <form onSubmit={handleSubmit} className="border border-[var(--border)] rounded-lg p-4 space-y-4">
+    <form onSubmit={handleSubmit} className="border border-[var(--border)] rounded-lg p-6 space-y-5">
       <h3 className="font-medium text-[var(--text-h)]">Nowa sesja</h3>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[var(--text)] mb-1">Typ sesji</label>
+          <label className="block text-sm text-[var(--text)] mb-2">Typ sesji</label>
           <select
             name="sessionType"
             value={form.sessionType}
@@ -56,7 +62,7 @@ function SessionForm({ clientId, onCreated, onCancel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-[var(--text)] mb-1">Data *</label>
+          <label className="block text-sm text-[var(--text)] mb-2">Data *</label>
           <input
             name="date"
             type="date"
@@ -69,18 +75,23 @@ function SessionForm({ clientId, onCreated, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm text-[var(--text)] mb-1">Notatki *</label>
+        <div className="flex items-baseline justify-between mb-2">
+          <label className="text-sm text-[var(--text)]">Notatki *</label>
+          <span className={`text-xs tabular-nums ${nearLimit ? 'text-amber-600' : 'text-[var(--text)]'}`}>
+            {notesLen.toLocaleString()} / {NOTES_LIMIT.toLocaleString()}
+          </span>
+        </div>
         <textarea
           name="notes"
           value={form.notes}
           onChange={handleChange}
-          rows={5}
+          rows={6}
           className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-y"
           placeholder="Przebieg sesji, obserwacje, plan na kolejną wizytę…"
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-3 pt-1">
         <button
           type="button"
           onClick={onCancel}
@@ -108,10 +119,10 @@ function SessionItem({ session, clientId }) {
     <li>
       <Link
         to={`/clients/${clientId}/sessions/${sessionId}`}
-        className="flex items-center justify-between py-4 hover:text-[var(--accent)] transition-colors group"
+        className="flex items-center justify-between py-4 group"
       >
         <div className="flex items-center gap-3">
-          <span className="font-medium text-[var(--text-h)] group-hover:text-[var(--accent)]">
+          <span className="font-medium text-[var(--text-h)] group-hover:text-[var(--accent)] transition-colors">
             {session.date}
           </span>
           <span className="text-sm text-[var(--text)] capitalize">{session.sessionType}</span>
@@ -119,7 +130,7 @@ function SessionItem({ session, clientId }) {
             {isSigned ? 'podpisana' : 'szkic'}
           </span>
         </div>
-        <span className="text-[var(--text)] text-sm">→</span>
+        <span className="text-[var(--text)] text-sm opacity-0 group-hover:opacity-100 transition-opacity">→</span>
       </Link>
     </li>
   )
@@ -160,45 +171,46 @@ export default function ClientDetail() {
   if (!client) return <p className="text-[var(--text)]">Klient nie znaleziony.</p>
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <button onClick={() => navigate('/clients')} className="text-[var(--accent)] text-sm mb-4">
+    <div className="max-w-2xl mx-auto space-y-8">
+      <button onClick={() => navigate('/clients')} className="text-[var(--accent)] text-sm">
         ← Wróć do listy
       </button>
 
-      <div className="border border-[var(--border)] rounded-lg p-6 space-y-4">
-        <h1 className="text-2xl font-medium text-[var(--text-h)]">
+      <div className="border border-[var(--border)] rounded-lg p-6">
+        <h1 className="text-2xl font-medium text-[var(--text-h)] mb-5">
           {client.firstName} {client.lastName}
         </h1>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
           <div>
-            <span className="text-[var(--text)]">PESEL:</span>
-            <p className="font-medium text-[var(--text-h)]">{client.pesel}</p>
+            <dt className="text-[var(--text)]">PESEL</dt>
+            <dd className="font-medium text-[var(--text-h)] mt-0.5">{client.pesel}</dd>
           </div>
           <div>
-            <span className="text-[var(--text)]">Data urodzenia:</span>
-            <p className="font-medium text-[var(--text-h)]">{client.birthDate}</p>
+            <dt className="text-[var(--text)]">Data urodzenia</dt>
+            <dd className="font-medium text-[var(--text-h)] mt-0.5">{client.birthDate}</dd>
           </div>
           {client.email && (
             <div>
-              <span className="text-[var(--text)]">Email:</span>
-              <p className="font-medium text-[var(--text-h)]">{client.email}</p>
+              <dt className="text-[var(--text)]">Email</dt>
+              <dd className="font-medium text-[var(--text-h)] mt-0.5">{client.email}</dd>
             </div>
           )}
           {client.phone && (
             <div>
-              <span className="text-[var(--text)]">Telefon:</span>
-              <p className="font-medium text-[var(--text-h)]">{client.phone}</p>
+              <dt className="text-[var(--text)]">Telefon</dt>
+              <dd className="font-medium text-[var(--text-h)] mt-0.5">{client.phone}</dd>
             </div>
           )}
-        </div>
+        </dl>
       </div>
 
-      <section className="mt-8">
-        <div className="flex items-center justify-between mb-4">
+      <section>
+        <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-medium text-[var(--text-h)]">
-            Sesje {!sessionsLoading && sessions.length > 0 && (
-              <span className="text-sm font-normal text-[var(--text)] ml-1">({sessions.length})</span>
+            Sesje
+            {!sessionsLoading && sessions.length > 0 && (
+              <span className="text-sm font-normal text-[var(--text)] ml-2">{sessions.length}</span>
             )}
           </h2>
           {!showForm && (
