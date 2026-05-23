@@ -47,7 +47,6 @@ function isMinor(pesel, birthDate) {
 
 export default function ClientForm({ onSuccess }) {
   const [step, setStep] = useState(1)
-  const [clientId, setClientId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
@@ -126,20 +125,10 @@ export default function ClientForm({ onSuccess }) {
     return true
   }
 
-  const handleNextStep = async () => {
+  const handleNextStep = () => {
     setError(null)
     if (!validateStep1()) return
-
-    setLoading(true)
-    try {
-      const response = await api.post('/clients', clientData)
-      setClientId(response.data.id)
-      setStep(2)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+    setStep(2)
   }
 
   const handleSubmit = async () => {
@@ -159,17 +148,14 @@ export default function ClientForm({ onSuccess }) {
         consentTexts.push('Zgoda na nagrywanie sesji')
       }
 
-      for (const consentText of consentTexts) {
-        await api.post(`/clients/${clientId}/consents`, {
-          clientId,
-          consentType: 'individual',
-          consentText,
-        })
-      }
+      await api.post('/clients', {
+        ...clientData,
+        consents: consentTexts.map((consentText) => ({ consentType: 'individual', consentText })),
+      })
 
       navigate('/clients')
     } catch (e) {
-      setError(`Błąd przy zapisywaniu zgód: ${e.message}`)
+      setError(`Błąd przy tworzeniu klienta: ${e.message}`)
       setLoading(false)
     }
   }
@@ -367,10 +353,9 @@ export default function ClientForm({ onSuccess }) {
             <button
               type="button"
               onClick={handleNextStep}
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
             >
-              {loading ? 'Tworzę klienta…' : 'Dalej → Zgody'}
+              Dalej → Zgody
             </button>
           </div>
         </form>
