@@ -6,7 +6,15 @@ export default function SignaturePad({ onSign, onClear, disabled = false }) {
 
   const handleSign = () => {
     if (signatureRef.current && !signatureRef.current.isEmpty()) {
-      const signatureImage = signatureRef.current.toDataURL('image/png')
+      const trimmedCanvas = signatureRef.current.getTrimmedCanvas()
+      const whiteCanvas = document.createElement('canvas')
+      whiteCanvas.width = trimmedCanvas.width
+      whiteCanvas.height = trimmedCanvas.height
+      const ctx = whiteCanvas.getContext('2d')
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, 0, whiteCanvas.width, whiteCanvas.height)
+      ctx.drawImage(trimmedCanvas, 0, 0)
+      const signatureImage = whiteCanvas.toDataURL('image/png')
       onSign(signatureImage)
     }
   }
