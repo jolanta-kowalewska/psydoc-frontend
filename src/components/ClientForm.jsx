@@ -80,6 +80,7 @@ export default function ClientForm({ onSuccess }) {
 
   const [signatureImage, setSignatureImage] = useState(null)
   const [createdClientId, setCreatedClientId] = useState(null)
+  const [signatureError, setSignatureError] = useState(null)
 
   const isMinorClient = isMinor(clientData.pesel, clientData.birthDate)
 
@@ -174,7 +175,7 @@ export default function ClientForm({ onSuccess }) {
   }
 
   const handleSignatureCapture = async (signatureBase64) => {
-    setError(null)
+    setSignatureError(null)
     setLoading(true)
     setSignatureImage(signatureBase64)
 
@@ -196,9 +197,9 @@ export default function ClientForm({ onSuccess }) {
         signatureImage: signatureBase64,
       })
 
-      navigate('/clients')
+      navigate(`/clients/${createdClientId}`)
     } catch (e) {
-      setError(`Błąd przy podpisywaniu dokumentu: ${e.message}`)
+      setSignatureError(e.message)
       setSignatureImage(null)
       setLoading(false)
     }
@@ -587,7 +588,7 @@ export default function ClientForm({ onSuccess }) {
 
       {/* KROK 3 — PODPIS ELEKTRONICZNY */}
       {step === 3 && (
-        <form className="space-y-6">
+        <div className="space-y-6">
           <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--code-bg)]">
             <h3 className="font-medium text-[var(--text-h)] mb-2">Podsumowanie zgód do podpisania</h3>
             <p className="text-sm text-[var(--text)] mb-3">
@@ -608,30 +609,33 @@ export default function ClientForm({ onSuccess }) {
             </label>
             <SignaturePad
               onSign={handleSignatureCapture}
-              onClear={() => setSignatureImage(null)}
+              onClear={() => { setSignatureImage(null); setSignatureError(null) }}
               disabled={loading}
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-[var(--border)] text-[var(--text-h)] rounded-lg text-sm hover:bg-[var(--code-bg)] disabled:opacity-50 transition-colors"
-            >
-              ← Wróć
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/clients')}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-[var(--border)] text-[var(--text-h)] rounded-lg text-sm hover:bg-[var(--code-bg)] disabled:opacity-50 transition-colors"
-            >
-              Anuluj
-            </button>
-          </div>
-        </form>
+          {loading && (
+            <p className="text-sm text-[var(--text)] text-center">Generuję dokument zgody…</p>
+          )}
+
+          {signatureError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-3">
+              <p className="text-sm text-red-700 font-medium">Błąd generowania dokumentu zgody:</p>
+              <p className="text-sm text-red-600">{signatureError}</p>
+              <p className="text-sm text-[var(--text)]">
+                Klient został zapisany. Możesz{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/clients/${createdClientId}`)}
+                  className="text-[var(--accent)] underline hover:opacity-80"
+                >
+                  przejść do profilu klienta
+                </button>
+                {' '}i spróbować podpisać zgodę ponownie.
+              </p>
+            </div>
+          )}
+        </div>
       )}
       </div>  
   )
