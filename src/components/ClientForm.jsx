@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import SignaturePad from './SignaturePad'
 
 const CONSENT_TEXT = `Wyrażam zgodę na przetwarzanie moich danych osobowych
 w celu prowadzenia dokumentacji psychologicznej zgodnie z ustawą
@@ -75,6 +76,9 @@ export default function ClientForm({ onSuccess }) {
     isGuardian: false,
   })
 
+  const [signatureImage, setSignatureImage] = useState(null)
+  const [createdClientId, setCreatedClientId] = useState(null)
+
   const isMinorClient = isMinor(clientData.pesel, clientData.birthDate)
 
   const handleClientChange = (e) => {
@@ -127,11 +131,15 @@ export default function ClientForm({ onSuccess }) {
 
   const handleNextStep = () => {
     setError(null)
-    if (!validateStep1()) return
-    setStep(2)
+    if (step === 1 && !validateStep1()) return
+    if (step === 2 && !validateStep2()) {
+      setError('Zaakceptuj wszystkie wymagane zgody')
+      return
+    }
+    setStep(step + 1)
   }
 
-  const handleSubmit = async () => {
+  const handleStep2Submit = async () => {
     setError(null)
     if (!validateStep2()) return
 
@@ -148,14 +156,48 @@ export default function ClientForm({ onSuccess }) {
         consentTexts.push('Zgoda na nagrywanie sesji')
       }
 
-      await api.post('/clients', {
+      const clientResponse = await api.post('/clients', {
         ...clientData,
         consents: consentTexts.map((consentText) => ({ consentType: 'individual', consentText })),
       })
 
-      navigate('/clients')
+      const clientId = clientResponse.data.id
+      setCreatedClientId(clientId)
+      setStep(3)
+      setLoading(false)
     } catch (e) {
       setError(`Błąd przy tworzeniu klienta: ${e.message}`)
+      setLoading(false)
+    }
+  }
+
+  const handleSignatureCapture = async (signatureBase64) => {
+    setError(null)
+    setLoading(true)
+    setSignatureImage(signatureBase64)
+
+    try {
+      const consentTexts = [
+        CONSENT_TEXT,
+        RODO_TEXT,
+        HEALTH_DATA_TEXT,
+        INFO_CLAUSE_TEXT,
+      ]
+
+      if (consentData.transcription) {
+        consentTexts.push('Zgoda na nagrywanie sesji')
+      }
+
+      await api.post('/documents/consent-pdf', {
+        clientId: createdClientId,
+        consents: consentTexts.map((consentText) => ({ consentType: 'individual', consentText })),
+        signatureImage: signatureBase64,
+      })
+
+      navigate('/clients')
+    } catch (e) {
+      setError(`Błąd przy podpisywaniu dokumentu: ${e.message}`)
+      setSignatureImage(null)
       setLoading(false)
     }
   }
@@ -165,15 +207,18 @@ export default function ClientForm({ onSuccess }) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-medium text-[var(--text-h)]">
-            {step === 1 ? 'Dodaj klienta — Dane osobowe' : 'Dodaj klienta — Zgody'}
+            {step === 1 && 'Dodaj klienta — Dane osobowe'}
+            {step === 2 && 'Dodaj klienta — Zgody'}
+            {step === 3 && 'Dodaj klienta — Podpis elektroniczny'}
           </h1>
           <span className="text-sm text-[var(--text)]">
-            Krok {step} z 2
+            Krok {step} z 3
           </span>
         </div>
         <div className="flex gap-2">
           <div className={`h-1 flex-1 rounded ${step >= 1 ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} />
           <div className={`h-1 flex-1 rounded ${step >= 2 ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} />
+          <div className={`h-1 flex-1 rounded ${step >= 3 ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} />
         </div>
       </div>
 
@@ -497,15 +542,61 @@ export default function ClientForm({ onSuccess }) {
             </button>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={handleStep2Submit}
               disabled={loading}
               className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              {loading ? 'Zapisuję…' : 'Utwórz klienta'}
+              {loading ? 'Zapisuję…' : 'Dalej → Podpis'}
             </button>
           </div>
         </form>
       )}
-    </div>
-  )
-}
+
+      {/* KROK 3 — PODPIS ELEKTRONICZNY */}
+      {step === 3 && (
+        <form className="space-y-6">
+          <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--code-bg)]">
+            <h3 className="font-medium text-[var(--text-h)] mb-2">Podsumowanie zgód do podpisania</h3>
+            <p className="text-sm text-[var(--text)] mb-3">
+              Podpisujesz zgodę dla: <strong>{clientData.firstName} {clientData.lastName}</strong>
+            </p>
+            <ul className="text-sm text-[var(--text)] space-y-1">
+              <li>✓ Zgoda na świadczenia psychologiczne</li>
+              <li>✓ Zgoda RODO — dane osobowe</li>
+              <li>✓ Zgoda RODO — dane o zdrowiu</li>
+              <li>✓ Klauzula informacyjna</li>
+              {consentData.transcription && <li>✓ Zgoda na nagrywanie/transkrypcję sesji</li>}
+            </ul>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-h)] mb-2">
+              Podpis elektroniczny *
+            </label>
+            <SignaturePad
+              onSign={handleSignatureCapture}
+              onClear={() => setSignatureImage(null)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              disabled={loading}
+              className="flex-1 px-4 py-2 border border-[var(--border)] text-[var(--text-h)] rounded-lg text-sm hover:bg-[var(--code-bg)] disabled:opacity-50 transition-colors"
+            >
+              ← Wróć
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/clients')}
+              disabled={loading}
+              className="flex-1 px-4 py-2 border border-[var(--border)] text-[var(--text-h)] rounded-lg text-sm hover:bg-[var(--code-bg)] disabled:opacity-50 transition-colors"
+            >
+              Anuluj
+            </button>
+          </div>
+        </form>
+      )}

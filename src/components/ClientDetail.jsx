@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../api/client'
+import ConsentDocuments from './ConsentDocuments'
 
 const SESSION_TYPES = [
   'indywidualna',
@@ -205,6 +206,13 @@ export default function ClientDetail() {
           )}
         </dl>
       </div>
+
+      <section>
+        <h2 className="text-lg font-medium text-[var(--text-h)] mb-5">
+          Podpisane dokumenty zgody
+        </h2>
+        <ConsentDocuments clientId={clientId} />
+      </section>
 
       <section>
         <div className="flex items-center justify-between mb-5">
