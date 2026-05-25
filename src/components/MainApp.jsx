@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 export default function MainApp({ user, signOut, children }) {
   return (
@@ -9,6 +9,14 @@ export default function MainApp({ user, signOut, children }) {
         </Link>
         <div className="flex items-center gap-4 text-sm text-[var(--text)]">
           <span>{user?.signInDetails?.loginId}</span>
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              isActive ? 'text-[var(--accent)]' : 'hover:text-[var(--accent)] transition-colors'
+            }
+          >
+            Profil
+          </NavLink>
           <button onClick={signOut} className="text-[var(--accent)] hover:underline">
             Wyloguj
           </button>
