@@ -1,32 +1,40 @@
 import { useRef, useEffect, useState } from 'react'
 import SignatureCanvas from 'react-signature-canvas'
 
-export default function SignaturePad({ onSign, onClear, disabled = false }) {
+export default function SignaturePad({ onSign, onClear, onError, disabled = false }) {
   const signatureRef = useRef(null)
   const [hasDrawing, setHasDrawing] = useState(false)
 
   useEffect(() => {
-    const canvas = signatureRef.current?.getCanvas()
-    if (canvas) {
-      canvas.width = canvas.offsetWidth
-      canvas.height = canvas.offsetHeight
-    }
+    // Defer resize until after browser layout is complete
+    const raf = requestAnimationFrame(() => {
+      const canvas = signatureRef.current?.getCanvas()
+      if (canvas && canvas.offsetWidth > 0 && canvas.offsetHeight > 0) {
+        canvas.width = canvas.offsetWidth
+        canvas.height = canvas.offsetHeight
+      }
+    })
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   const handleSign = () => {
     if (!signatureRef.current || !hasDrawing) return
     try {
-      const trimmedCanvas = signatureRef.current.getTrimmedCanvas()
+      // Use full canvas to avoid 0×0 trimmed canvas when buffer wasn't set correctly
+      const srcCanvas = signatureRef.current.getCanvas()
+      const w = srcCanvas.width || srcCanvas.offsetWidth || 400
+      const h = srcCanvas.height || srcCanvas.offsetHeight || 200
       const whiteCanvas = document.createElement('canvas')
-      whiteCanvas.width = trimmedCanvas.width
-      whiteCanvas.height = trimmedCanvas.height
+      whiteCanvas.width = w
+      whiteCanvas.height = h
       const ctx = whiteCanvas.getContext('2d')
       ctx.fillStyle = 'white'
-      ctx.fillRect(0, 0, whiteCanvas.width, whiteCanvas.height)
-      ctx.drawImage(trimmedCanvas, 0, 0)
+      ctx.fillRect(0, 0, w, h)
+      ctx.drawImage(srcCanvas, 0, 0)
       onSign(whiteCanvas.toDataURL('image/png'))
     } catch (e) {
       console.error('Signature capture failed:', e)
+      if (onError) onError(`Błąd odczytu podpisu: ${e.message}`)
     }
   }
 

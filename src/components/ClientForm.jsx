@@ -610,6 +610,7 @@ export default function ClientForm({ onSuccess }) {
             <SignaturePad
               onSign={handleSignatureCapture}
               onClear={() => { setSignatureImage(null); setSignatureError(null) }}
+              onError={(msg) => setSignatureError(msg)}
               disabled={loading}
             />
           </div>
