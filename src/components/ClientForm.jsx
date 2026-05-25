@@ -59,12 +59,14 @@ export default function ClientForm({ onSuccess }) {
     birthDate: '',
     email: '',
     phone: '',
+    address: '',
   })
 
   const [guardianData, setGuardianData] = useState({
     firstName: '',
     lastName: '',
     pesel: '',
+    address: '',
   })
 
   const [consentData, setConsentData] = useState({
@@ -104,14 +106,14 @@ export default function ClientForm({ onSuccess }) {
   }
 
   const validateStep1 = () => {
-    const required = ['firstName', 'lastName', 'pesel', 'birthDate']
+    const required = ['firstName', 'lastName', 'pesel', 'birthDate', 'address']
     const missing = required.filter((f) => !clientData[f])
     if (missing.length > 0) {
       setError(`Wypełnij wymagane pola: ${missing.join(', ')}`)
       return false
     }
 
-    if (isMinorClient && (!guardianData.firstName || !guardianData.lastName || !guardianData.pesel)) {
+    if (isMinorClient && (!guardianData.firstName || !guardianData.lastName || !guardianData.pesel || !guardianData.address)) {
       setError('Dla małoletnich wymagane są dane przedstawiciela ustawowego')
       return false
     }
@@ -332,6 +334,22 @@ export default function ClientForm({ onSuccess }) {
             </div>
           </div>
 
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-[var(--text-h)] mb-2">
+              Adres *
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              required
+              value={clientData.address}
+              onChange={handleClientChange}
+              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              placeholder="ul. Przykładowa 1, 00-001 Warszawa"
+            />
+          </div>
+
           {/* POLA PRZEDSTAWICIELA DLA MAŁOLETNICH */}
           {isMinorClient && (
             <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
@@ -382,6 +400,21 @@ export default function ClientForm({ onSuccess }) {
                   maxLength="11"
                   className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[var(--text-h)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   placeholder="00000000000"
+                />
+              </div>
+              <div className="mt-4">
+                <label htmlFor="guardianAddress" className="block text-sm font-medium text-[var(--text-h)] mb-2">
+                  Adres *
+                </label>
+                <input
+                  id="guardianAddress"
+                  name="address"
+                  type="text"
+                  required
+                  value={guardianData.address}
+                  onChange={handleGuardianChange}
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[var(--text-h)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                  placeholder="ul. Przykładowa 1, 00-001 Warszawa"
                 />
               </div>
             </div>
@@ -600,3 +633,6 @@ export default function ClientForm({ onSuccess }) {
           </div>
         </form>
       )}
+      </div>  
+  )
+} 
