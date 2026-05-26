@@ -5,7 +5,7 @@ export default function MainApp({ user, signOut, children }) {
     <div className="min-h-screen flex flex-col">
       <header className="flex items-center justify-between px-6 py-3 border-b border-[var(--border)]">
         <Link to="/clients" className="text-[var(--text-h)] font-medium text-lg">
-          PsyDoc
+          MindData
         </Link>
         <div className="flex items-center gap-4 text-sm text-[var(--text)]">
           <span>{user?.signInDetails?.loginId}</span>
