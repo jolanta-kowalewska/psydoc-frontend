@@ -8,7 +8,24 @@ const SESSION_TYPES = [
   'diagnostyczna',
   'konsultacja',
   'grupowa',
+  'arkusz_testu',
+  'notatki_robocze',
 ]
+
+const SESSION_TYPE_LABELS = {
+  indywidualna: 'Indywidualna',
+  diagnostyczna: 'Diagnostyczna',
+  konsultacja: 'Konsultacja',
+  grupowa: 'Grupowa',
+  arkusz_testu: 'Arkusz testu',
+  notatki_robocze: 'Notatki robocze',
+}
+
+const RESTRICTION_REASON_LABELS = {
+  test_sheet: 'arkusz testu (art. 28 ust. 4)',
+  working_notes: 'notatki robocze (art. 28 ust. 4)',
+  guardian_protection: 'ochrona dobra klienta (art. 28 ust. 7)',
+}
 
 const NOTES_LIMIT = 10_000
 
@@ -58,7 +75,7 @@ function SessionForm({ clientId, onCreated, onCancel }) {
             className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           >
             {SESSION_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>{SESSION_TYPE_LABELS[t] ?? t}</option>
             ))}
           </select>
         </div>
@@ -112,24 +129,38 @@ function SessionForm({ clientId, onCreated, onCancel }) {
   )
 }
 
-function SessionItem({ session, clientId }) {
+function SessionItem({ session, clientId, selectMode, isSelected, onToggle }) {
   const sessionId = session.PK?.replace('SESSION#', '') ?? session.id
   const isSigned = session.state === 'signed'
+  const isRestricted = session.accessRestricted
 
   return (
-    <li>
+    <li className="flex items-center gap-3 py-1">
+      {selectMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggle(sessionId)}
+          className="w-4 h-4 shrink-0 accent-[var(--accent)] cursor-pointer"
+        />
+      )}
       <Link
         to={`/clients/${clientId}/sessions/${sessionId}`}
-        className="flex items-center justify-between py-4 group"
+        className="flex-1 flex items-center justify-between py-3 group"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="font-medium text-[var(--text-h)] group-hover:text-[var(--accent)] transition-colors">
             {session.date}
           </span>
-          <span className="text-sm text-[var(--text)] capitalize">{session.sessionType}</span>
+          <span className="text-sm text-[var(--text)]">{SESSION_TYPE_LABELS[session.sessionType] ?? session.sessionType}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full ${isSigned ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
             {isSigned ? 'podpisana' : 'szkic'}
           </span>
+          {isRestricted && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700" title={RESTRICTION_REASON_LABELS[session.restrictionReason] ?? 'ograniczony dostęp'}>
+              ograniczony
+            </span>
+          )}
         </div>
         <span className="text-[var(--text)] text-sm opacity-0 group-hover:opacity-100 transition-opacity">→</span>
       </Link>
@@ -146,6 +177,10 @@ export default function ClientDetail() {
   const [sessionsLoading, setSessionsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState(null)
 
   useEffect(() => {
     api.get(`/clients/${clientId}`)
@@ -167,6 +202,32 @@ export default function ClientDetail() {
   }
 
   useEffect(() => { loadSessions() }, [clientId])
+
+  const toggleSelect = (sessionId) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.has(sessionId) ? next.delete(sessionId) : next.add(sessionId)
+      return next
+    })
+  }
+
+  const handleBulkExport = async () => {
+    setExporting(true)
+    setExportError(null)
+    try {
+      const res = await api.post('/documents/full-export', {
+        clientId,
+        sessionIds: [...selectedIds],
+      })
+      window.open(res.data.url, '_blank')
+      setSelectMode(false)
+      setSelectedIds(new Set())
+    } catch (e) {
+      setExportError(e.message)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (clientLoading) return <p className="text-[var(--text)]">Ładowanie…</p>
   if (error) return <p className="text-red-500">{error}</p>
@@ -222,15 +283,44 @@ export default function ClientDetail() {
               <span className="text-sm font-normal text-[var(--text)] ml-2">{sessions.length}</span>
             )}
           </h2>
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
-            >
-              Dodaj sesję
-            </button>
-          )}
+          <div className="flex gap-2">
+            {!showForm && sessions.length > 0 && (
+              <button
+                onClick={() => { setSelectMode((v) => !v); setSelectedIds(new Set()); setExportError(null) }}
+                className="px-4 py-2 border border-[var(--border)] text-[var(--text-h)] rounded-lg text-sm hover:bg-[var(--code-bg)] transition-colors"
+              >
+                {selectMode ? 'Anuluj' : 'Eksportuj'}
+              </button>
+            )}
+            {!showForm && !selectMode && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
+              >
+                Dodaj sesję
+              </button>
+            )}
+          </div>
         </div>
+
+        {selectMode && (
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => setSelectedIds(new Set(sessions.map((s) => s.PK?.replace('SESSION#', '') ?? s.id)))}
+              className="text-sm text-[var(--accent)] hover:underline"
+            >
+              Zaznacz wszystkie
+            </button>
+            <button
+              onClick={handleBulkExport}
+              disabled={selectedIds.size === 0 || exporting}
+              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {exporting ? 'Generuję…' : `Eksportuj zaznaczone (${selectedIds.size})`}
+            </button>
+            {exportError && <p className="text-red-500 text-sm">{exportError}</p>}
+          </div>
+        )}
 
         {showForm && (
           <div className="mb-6">
@@ -250,13 +340,19 @@ export default function ClientDetail() {
 
         {!sessionsLoading && sessions.length > 0 && (
           <ul className="divide-y divide-[var(--border)]">
-            {sessions.map((s) => (
-              <SessionItem
-                key={s.PK ?? s.id}
-                session={s}
-                clientId={clientId}
-              />
-            ))}
+            {sessions.map((s) => {
+              const sid = s.PK?.replace('SESSION#', '') ?? s.id
+              return (
+                <SessionItem
+                  key={s.PK ?? s.id}
+                  session={s}
+                  clientId={clientId}
+                  selectMode={selectMode}
+                  isSelected={selectedIds.has(sid)}
+                  onToggle={toggleSelect}
+                />
+              )
+            })}
           </ul>
         )}
       </section>

@@ -12,6 +12,8 @@ export default function SessionDetail() {
   const [signError, setSignError] = useState(null)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState(null)
+  const [restricting, setRestricting] = useState(false)
+  const [restrictError, setRestrictError] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -33,6 +35,23 @@ export default function SessionDetail() {
       setSignError(err.message)
     } finally {
       setSigning(false)
+    }
+  }
+
+  const handleToggleRestrict = async () => {
+    const newRestricted = !session.accessRestricted
+    setRestricting(true)
+    setRestrictError(null)
+    try {
+      await api.put(`/sessions/${sessionId}/restrict`, {
+        accessRestricted: newRestricted,
+        ...(newRestricted ? { restrictionReason: 'guardian_protection' } : {}),
+      })
+      load()
+    } catch (e) {
+      setRestrictError(e.message)
+    } finally {
+      setRestricting(false)
     }
   }
 
@@ -120,6 +139,40 @@ export default function SessionDetail() {
               </p>
             </div>
           )}
+
+          {(() => {
+            const autoRestricted = ['arkusz_testu', 'notatki_robocze'].includes(session.sessionType)
+            const reasonLabels = {
+              test_sheet: 'arkusz testu (art. 28 ust. 4)',
+              working_notes: 'notatki robocze (art. 28 ust. 4)',
+              guardian_protection: 'ochrona dobra klienta (art. 28 ust. 7)',
+            }
+            return (
+              <div className="border-t border-[var(--border)] pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-medium text-[var(--text)]">Dostęp pacjenta</span>
+                    {session.accessRestricted && (
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        ograniczony — {reasonLabels[session.restrictionReason] ?? session.restrictionReason}
+                      </span>
+                    )}
+                  </div>
+                  {!autoRestricted && (
+                    <button
+                      type="button"
+                      onClick={handleToggleRestrict}
+                      disabled={restricting}
+                      className="text-sm text-[var(--text)] hover:text-[var(--text-h)] disabled:opacity-50 transition-colors"
+                    >
+                      {restricting ? '…' : session.accessRestricted ? 'Odblokuj' : 'Ogranicz (art. 28 ust. 7)'}
+                    </button>
+                  )}
+                </div>
+                {restrictError && <p className="text-red-500 text-xs mt-1">{restrictError}</p>}
+              </div>
+            )
+          })()}
 
           <div className="border-t border-[var(--border)] pt-4">
             <h2 className="text-sm font-medium text-[var(--text)] mb-3">Notatki</h2>
