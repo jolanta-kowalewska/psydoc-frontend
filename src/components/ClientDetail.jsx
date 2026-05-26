@@ -309,12 +309,18 @@ export default function ClientDetail() {
         </div>
 
         {selectMode && (
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3 flex-wrap">
             <button
               onClick={() => setSelectedIds(new Set(sessions.map((s) => s.PK?.replace('SESSION#', '') ?? s.id)))}
               className="text-sm text-[var(--accent)] hover:underline"
             >
               Zaznacz wszystkie
+            </button>
+            <button
+              onClick={() => setSelectedIds(new Set(sessions.filter((s) => !s.accessRestricted).map((s) => s.PK?.replace('SESSION#', '') ?? s.id)))}
+              className="text-sm text-[var(--accent)] hover:underline"
+            >
+              Zaznacz dostępne dla pacjenta
             </button>
             <button
               onClick={handleBulkExport}
