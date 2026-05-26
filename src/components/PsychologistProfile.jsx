@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 
-const EMPTY = { firstName: '', lastName: '', licenseNumber: '', address: '', calendlyUrl: '' }
+const DEFAULT_APPOINTMENT_TYPES = [
+  { id: 'default-individual', name: 'Indywidualna', durationMinutes: 50 },
+  { id: 'default-diagnostic', name: 'Diagnostyczna', durationMinutes: 60 },
+]
+
+const EMPTY = { firstName: '', lastName: '', licenseNumber: '', address: '', calendlyUrl: '', appointmentTypes: DEFAULT_APPOINTMENT_TYPES }
 
 function Field({ label, value, placeholder }) {
   return (
@@ -46,7 +51,8 @@ export default function PsychologistProfile() {
     api.get('/psychologist/profile')
       .then((res) => {
         const { firstName = '', lastName = '', licenseNumber = '', address = '', calendlyUrl = '' } = res.data
-        const profile = { firstName, lastName, licenseNumber, address, calendlyUrl }
+        const appointmentTypes = res.data.appointmentTypes?.length ? res.data.appointmentTypes : DEFAULT_APPOINTMENT_TYPES
+        const profile = { firstName, lastName, licenseNumber, address, calendlyUrl, appointmentTypes }
         setSaved(profile)
         setForm(profile)
         setHasProfile(true)
@@ -76,6 +82,27 @@ export default function PsychologistProfile() {
     setForm(saved)
     setError(null)
     setIsEditing(false)
+  }
+
+  const handleTypeChange = (id, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      appointmentTypes: prev.appointmentTypes.map((t) => t.id === id ? { ...t, [field]: value } : t),
+    }))
+  }
+
+  const handleAddType = () => {
+    setForm((prev) => ({
+      ...prev,
+      appointmentTypes: [...prev.appointmentTypes, { id: crypto.randomUUID(), name: '', durationMinutes: 50 }],
+    }))
+  }
+
+  const handleRemoveType = (id) => {
+    setForm((prev) => ({
+      ...prev,
+      appointmentTypes: prev.appointmentTypes.filter((t) => t.id !== id),
+    }))
   }
 
   const handleSubmit = async (e) => {
@@ -146,6 +173,22 @@ export default function PsychologistProfile() {
               }
             </div>
           </div>
+
+          <div className="border border-[var(--border)] rounded-lg p-6 space-y-3">
+            <h2 className="font-medium text-[var(--text-h)]">Typy wizyt</h2>
+            {saved.appointmentTypes?.length > 0 ? (
+              <ul className="space-y-2">
+                {saved.appointmentTypes.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between text-sm">
+                    <span className="text-[var(--text-h)]">{t.name}</span>
+                    <span className="text-[var(--text)]">{t.durationMinutes} min</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-[var(--text)] opacity-40">Brak zdefiniowanych typów.</p>
+            )}
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -179,6 +222,41 @@ export default function PsychologistProfile() {
           <div className="border border-[var(--border)] rounded-lg p-6 space-y-5">
             <h2 className="font-medium text-[var(--text-h)]">Kalendarz Calendly</h2>
             <FormInput id="calendlyUrl" label="Link do kalendarza" value={form.calendlyUrl} onChange={handleChange} placeholder="https://calendly.com/twoj-login" />
+          </div>
+
+          <div className="border border-[var(--border)] rounded-lg p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium text-[var(--text-h)]">Typy wizyt</h2>
+              <button type="button" onClick={handleAddType} className="text-sm text-[var(--accent)] hover:underline">
+                + Dodaj typ
+              </button>
+            </div>
+            {form.appointmentTypes.length === 0 && (
+              <p className="text-sm text-[var(--text)] opacity-40">Brak zdefiniowanych typów.</p>
+            )}
+            {form.appointmentTypes.map((t) => (
+              <div key={t.id} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={t.name}
+                  onChange={(e) => handleTypeChange(t.id, 'name', e.target.value)}
+                  placeholder="Nazwa wizyty"
+                  className="flex-1 px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  max="480"
+                  value={t.durationMinutes}
+                  onChange={(e) => handleTypeChange(t.id, 'durationMinutes', parseInt(e.target.value) || 1)}
+                  className="w-16 px-2 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-center"
+                />
+                <span className="text-sm text-[var(--text)] shrink-0">min</span>
+                <button type="button" onClick={() => handleRemoveType(t.id)} className="text-sm text-[var(--text)] hover:text-red-500 transition-colors shrink-0">
+                  Usuń
+                </button>
+              </div>
+            ))}
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
