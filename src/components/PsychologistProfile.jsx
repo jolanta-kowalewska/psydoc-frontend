@@ -52,7 +52,7 @@ export default function PsychologistProfile() {
         setHasProfile(true)
       })
       .catch((e) => {
-        if (e.message?.includes('404')) {
+        if (e.message?.toLowerCase().includes('not found') || e.message?.includes('404')) {
           setIsEditing(true)
         } else {
           setError(e.message)
