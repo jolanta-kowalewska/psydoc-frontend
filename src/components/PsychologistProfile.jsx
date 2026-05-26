@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 
-const EMPTY = { firstName: '', lastName: '', licenseNumber: '', address: '' }
+const EMPTY = { firstName: '', lastName: '', licenseNumber: '', address: '', calendlyUrl: '' }
 
 function Field({ label, value, placeholder }) {
   return (
@@ -45,8 +45,8 @@ export default function PsychologistProfile() {
   useEffect(() => {
     api.get('/psychologist/profile')
       .then((res) => {
-        const { firstName = '', lastName = '', licenseNumber = '', address = '' } = res.data
-        const profile = { firstName, lastName, licenseNumber, address }
+        const { firstName = '', lastName = '', licenseNumber = '', address = '', calendlyUrl = '' } = res.data
+        const profile = { firstName, lastName, licenseNumber, address, calendlyUrl }
         setSaved(profile)
         setForm(profile)
         setHasProfile(true)
@@ -135,6 +135,17 @@ export default function PsychologistProfile() {
             </div>
             <Field label="Numer wpisu" value={saved.licenseNumber} placeholder="nie podano" />
           </div>
+
+          <div className="border border-[var(--border)] rounded-lg p-6 space-y-4">
+            <h2 className="font-medium text-[var(--text-h)]">Kalendarz Calendly</h2>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-h)]">Link do kalendarza</p>
+              {saved.calendlyUrl
+                ? <a href={saved.calendlyUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--accent)] hover:underline mt-1 block break-all">{saved.calendlyUrl}</a>
+                : <p className="text-sm text-[var(--text)] mt-1 opacity-40">nie podano</p>
+              }
+            </div>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -163,6 +174,11 @@ export default function PsychologistProfile() {
               <p className="text-xs text-[var(--text)] mt-1">Obowiązkowy od 2028 r. (art. 5 ustawy o zawodzie psychologa)</p>
             </div>
             <FormInput id="licenseNumber" label="Numer wpisu" value={form.licenseNumber} onChange={handleChange} placeholder="PSY/2028/00000" />
+          </div>
+
+          <div className="border border-[var(--border)] rounded-lg p-6 space-y-5">
+            <h2 className="font-medium text-[var(--text-h)]">Kalendarz Calendly</h2>
+            <FormInput id="calendlyUrl" label="Link do kalendarza" value={form.calendlyUrl} onChange={handleChange} placeholder="https://calendly.com/twoj-login" />
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}

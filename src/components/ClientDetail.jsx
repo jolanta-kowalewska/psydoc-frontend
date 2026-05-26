@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { InlineWidget } from 'react-calendly'
 import api from '../api/client'
 import ConsentDocuments from './ConsentDocuments'
 
@@ -181,12 +182,16 @@ export default function ClientDetail() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState(null)
+  const [calendlyUrl, setCalendlyUrl] = useState(null)
 
   useEffect(() => {
     api.get(`/clients/${clientId}`)
       .then((res) => setClient(res.data))
       .catch((e) => setError(e.message))
       .finally(() => setClientLoading(false))
+    api.get('/psychologist/profile')
+      .then((res) => setCalendlyUrl(res.data.calendlyUrl || null))
+      .catch(() => {})
   }, [clientId])
 
   const loadSessions = () => {
@@ -356,6 +361,18 @@ export default function ClientDetail() {
           </ul>
         )}
       </section>
+
+      {calendlyUrl && (
+        <section>
+          <h2 className="text-lg font-medium text-[var(--text-h)] mb-5">Umów wizytę</h2>
+          <div className="border border-[var(--border)] rounded-lg overflow-hidden">
+            <InlineWidget
+              url={calendlyUrl}
+              styles={{ minWidth: '320px', height: '700px' }}
+            />
+          </div>
+        </section>
+      )}
     </div>
   )
 }
