@@ -7,6 +7,7 @@ import ClientDetail from './components/ClientDetail'
 import ClientForm from './components/ClientForm'
 import SessionDetail from './components/SessionDetail'
 import PsychologistProfile from './components/PsychologistProfile'
+import CalendarPage from './components/CalendarPage'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
               <Route path="/clients/:clientId" element={<ClientDetail />} />
               <Route path="/clients/:clientId/sessions/:sessionId" element={<SessionDetail />} />
               <Route path="/profile" element={<PsychologistProfile />} />
+              <Route path="/calendar" element={<CalendarPage />} />
             </Routes>
           </MainApp>
         </BrowserRouter>

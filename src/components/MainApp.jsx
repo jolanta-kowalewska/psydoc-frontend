@@ -10,6 +10,14 @@ export default function MainApp({ user, signOut, children }) {
         <div className="flex items-center gap-4 text-sm text-[var(--text)]">
           <span>{user?.signInDetails?.loginId}</span>
           <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              isActive ? 'text-[var(--accent)]' : 'hover:text-[var(--accent)] transition-colors'
+            }
+          >
+            Kalendarz
+          </NavLink>
+          <NavLink
             to="/profile"
             className={({ isActive }) =>
               isActive ? 'text-[var(--accent)]' : 'hover:text-[var(--accent)] transition-colors'
