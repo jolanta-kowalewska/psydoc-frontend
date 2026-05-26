@@ -16,7 +16,7 @@ function App() {
         <BrowserRouter>
           <MainApp user={user} signOut={signOut}>
             <Routes>
-              <Route path="/" element={<Navigate to="/clients" replace />} />
+              <Route path="/" element={<Navigate to="/calendar" replace />} />
               <Route path="/clients" element={<ClientList />} />
               <Route path="/clients/new" element={<ClientForm />} />
               <Route path="/clients/:clientId" element={<ClientDetail />} />
