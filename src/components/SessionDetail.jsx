@@ -10,6 +10,8 @@ export default function SessionDetail() {
   const [error, setError] = useState(null)
   const [signing, setSigning] = useState(false)
   const [signError, setSignError] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -34,7 +36,18 @@ export default function SessionDetail() {
     }
   }
 
-  const handlePrint = () => window.print()
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError(null)
+    try {
+      const res = await api.post('/documents/export', { sessionId })
+      window.open(res.data.url, '_blank')
+    } catch (e) {
+      setExportError(e.message)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (loading) return <p className="text-[var(--text)]">Ładowanie…</p>
   if (error) return <p className="text-red-500">{error}</p>
@@ -70,16 +83,20 @@ export default function SessionDetail() {
               </button>
             )}
             <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 transition-opacity"
+              onClick={handleExport}
+              disabled={exporting}
+              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              Eksportuj PDF
+              {exporting ? 'Generuję…' : 'Eksportuj PDF'}
             </button>
           </div>
         </div>
 
         {signError && (
           <p className="text-red-500 text-sm mb-4 no-print">{signError}</p>
+        )}
+        {exportError && (
+          <p className="text-red-500 text-sm mb-4 no-print">{exportError}</p>
         )}
 
         <div className="border border-[var(--border)] rounded-lg p-6 space-y-6">
@@ -106,7 +123,7 @@ export default function SessionDetail() {
 
           <div className="border-t border-[var(--border)] pt-4">
             <h2 className="text-sm font-medium text-[var(--text)] mb-3">Notatki</h2>
-            <p className="text-[var(--text-h)] whitespace-pre-wrap leading-relaxed">
+            <p className="text-[var(--text-h)] whitespace-pre-wrap break-words leading-relaxed">
               {session.notes}
             </p>
           </div>
