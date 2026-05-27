@@ -362,6 +362,9 @@ export default function CalendarPage() {
   const [appointmentTypes, setAppointmentTypes] = useState([])
   const [clients, setClients] = useState([])
 
+  const [zoom] = useState(() => parseInt(localStorage.getItem('minddata-zoom') || '16'))
+  const slotHeight = Math.round(60 * (zoom / 16))
+
   const [choiceSlot, setChoiceSlot] = useState(null)
   const [appointmentSlot, setAppointmentSlot] = useState(null)
   const [blockSlot, setBlockSlot] = useState(null)
@@ -450,9 +453,10 @@ export default function CalendarPage() {
       </div>
 
       <style>{`
-        .rbc-timeslot-group { min-height: 60px; }
-        .rbc-time-content { font-size: 12px; }
+        .rbc-timeslot-group { min-height: ${slotHeight}px; }
+        .rbc-time-content { font-size: ${Math.round(zoom * 0.7)}px; }
         .rbc-event { padding: 2px 4px !important; }
+        .rbc-time-gutter .rbc-label { font-size: ${Math.round(zoom * 0.7)}px; }
       `}</style>
       <div className="border border-[var(--border)] rounded-xl overflow-hidden" style={{ height: '720px' }}>
         <Calendar
