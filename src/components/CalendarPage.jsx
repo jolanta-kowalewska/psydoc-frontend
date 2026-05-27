@@ -85,8 +85,8 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
   const [error, setError] = useState(null)
   const [showClientList, setShowClientList] = useState(false)
 
-  const filteredClients = clientSearch.length > 0
-    ? clients.filter(c => `${c.firstName} ${c.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())).slice(0, 8)
+  const filteredClients = showClientList
+    ? clients.filter(c => !clientSearch || `${c.firstName} ${c.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())).slice(0, 8)
     : []
 
   const handleTypeSelect = (type) => {
@@ -170,10 +170,11 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
           <label className="block text-sm font-medium text-[var(--text-h)] mb-1">Klient</label>
           <input
             className={inputCls}
-            placeholder="Szukaj klienta…"
+            placeholder="Zacznij wpisywać nazwisko…"
             value={clientSearch}
             onChange={(e) => { setClientSearch(e.target.value); setClientId(''); setShowClientList(true) }}
             onFocus={() => setShowClientList(true)}
+            onBlur={() => setTimeout(() => setShowClientList(false), 150)}
           />
           {showClientList && filteredClients.length > 0 && (
             <ul className="absolute z-10 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg mt-1 shadow-lg max-h-40 overflow-y-auto">
