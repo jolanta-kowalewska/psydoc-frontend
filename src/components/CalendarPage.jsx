@@ -81,7 +81,8 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
   const [recurring, setRecurring] = useState(false)
   const [recurringWeeks, setRecurringWeeks] = useState(8)
   const [note, setNote] = useState('')
-  const [remote, setRemote] = useState(false)
+  const [meetingType, setMeetingType] = useState('in_person')
+  const [meetingUrl, setMeetingUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showClientList, setShowClientList] = useState(false)
@@ -120,7 +121,8 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
         recurring,
         recurringWeeks: recurring ? Number(recurringWeeks) : 1,
         note,
-        remote,
+        meetingType,
+        meetingUrl: meetingType === 'custom_link' ? meetingUrl : undefined,
       })
       onSaved()
     } catch (e) {
@@ -217,11 +219,37 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
           )}
         </div>
 
-        {/* Zdalna / Zoom */}
-        <label className="flex items-center gap-2 text-sm text-[var(--text-h)] cursor-pointer">
-          <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="accent-[var(--accent)]" />
-          Wizyta zdalna — utwórz spotkanie Zoom
-        </label>
+        {/* Typ spotkania */}
+        <div>
+          <p className="text-sm font-medium text-[var(--text-h)] mb-2">Miejsce spotkania</p>
+          <div className="flex flex-col gap-2">
+            {[
+              { value: 'in_person', label: 'Stacjonarna' },
+              { value: 'zoom',      label: 'Online — Zoom (automatyczny link)' },
+              { value: 'custom_link', label: 'Online — własny link (Teams, Google Meet…)' },
+            ].map(({ value, label }) => (
+              <label key={value} className="flex items-center gap-2 text-sm text-[var(--text-h)] cursor-pointer">
+                <input
+                  type="radio"
+                  name="meetingType"
+                  value={value}
+                  checked={meetingType === value}
+                  onChange={() => setMeetingType(value)}
+                  className="accent-[var(--accent)]"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          {meetingType === 'custom_link' && (
+            <input
+              className={`${inputCls} mt-2`}
+              placeholder="https://teams.microsoft.com/..."
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+            />
+          )}
+        </div>
 
         {/* Notatka */}
         <div>
@@ -338,12 +366,12 @@ function EventModal({ event, onDeleted, onClose }) {
             <dd className="text-[var(--text-h)]">{r.note}</dd>
           </div>
         )}
-        {!isBlock && r.zoomJoinUrl && (
+        {!isBlock && r.meetingUrl && (
           <div className="flex justify-between items-center">
-            <dt className="text-[var(--text)]">Zoom</dt>
+            <dt className="text-[var(--text)]">{r.meetingType === 'zoom' ? 'Zoom' : 'Link'}</dt>
             <dd>
               <a
-                href={r.zoomJoinUrl}
+                href={r.meetingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline font-medium"
@@ -464,7 +492,7 @@ export default function CalendarPage() {
     }
     return (
       <div className="px-0.5 leading-tight overflow-hidden h-full">
-        <div className="font-semibold truncate">{r?.clientName}{r?.zoomJoinUrl ? ' 🎥' : ''}</div>
+        <div className="font-semibold truncate">{r?.clientName}{r?.meetingUrl ? ' 🎥' : ''}</div>
         <div className="truncate opacity-80">{r?.appointmentType}</div>
       </div>
     )
