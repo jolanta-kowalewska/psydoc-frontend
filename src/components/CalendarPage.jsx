@@ -414,7 +414,10 @@ export default function CalendarPage() {
       })
       .catch(() => setAppointmentTypes(DEFAULT_APPOINTMENT_TYPES))
     api.get('/clients')
-      .then((r) => setClients(r.data.clients ?? r.data ?? []))
+      .then((r) => {
+        const all = r.data.clients ?? r.data ?? []
+        setClients(all.filter(c => c.PK?.startsWith('CLIENT#') && c.SK === 'PROFILE'))
+      })
       .catch(() => {})
   }, [])
 
