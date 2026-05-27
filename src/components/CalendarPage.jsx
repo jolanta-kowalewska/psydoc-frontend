@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
+
+const DEFAULT_APPOINTMENT_TYPES = [
+  { id: 'default-individual', name: 'Indywidualna', durationMinutes: 50 },
+  { id: 'default-diagnostic', name: 'Diagnostyczna', durationMinutes: 60 },
+]
 import { format, parse, startOfWeek, endOfWeek, getDay, addMinutes } from 'date-fns'
 import { pl } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -402,8 +407,11 @@ export default function CalendarPage() {
 
   useEffect(() => {
     api.get('/psychologist/profile')
-      .then((r) => setAppointmentTypes(r.data.appointmentTypes ?? []))
-      .catch(() => {})
+      .then((r) => {
+        const types = r.data.appointmentTypes
+        setAppointmentTypes(types?.length ? types : DEFAULT_APPOINTMENT_TYPES)
+      })
+      .catch(() => setAppointmentTypes(DEFAULT_APPOINTMENT_TYPES))
     api.get('/clients')
       .then((r) => setClients(r.data.clients ?? r.data ?? []))
       .catch(() => {})
