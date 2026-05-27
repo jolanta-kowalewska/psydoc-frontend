@@ -14,6 +14,8 @@ export default function SessionDetail() {
   const [exportError, setExportError] = useState(null)
   const [restricting, setRestricting] = useState(false)
   const [restrictError, setRestrictError] = useState(null)
+  const [transcribing, setTranscribing] = useState(false)
+  const [transcribeError, setTranscribeError] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -24,6 +26,58 @@ export default function SessionDetail() {
   }
 
   useEffect(() => { load() }, [sessionId])
+
+  // Polling — sprawdza status transkrypcji co 5s gdy job jest w toku
+  useEffect(() => {
+    if (session?.transcribeStatus !== 'IN_PROGRESS' || session?.transcript) return
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/sessions/${sessionId}/transcribe`)
+        if (res.data.status === 'COMPLETED' || res.data.status === 'FAILED') {
+          clearInterval(interval)
+          load()
+        }
+      } catch {
+        // ignoruj błędy pollingu
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [session?.transcribeStatus, session?.transcript])
+
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result.split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
+  const handleTranscribeUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['mp3', 'wav', 'mp4'].includes(ext)) {
+      setTranscribeError('Nieobsługiwany format. Użyj mp3, wav lub mp4.')
+      return
+    }
+    if (file.size > 7 * 1024 * 1024) {
+      setTranscribeError('Plik za duży. Maksymalny rozmiar: 7 MB.')
+      return
+    }
+
+    setTranscribing(true)
+    setTranscribeError(null)
+    try {
+      const base64 = await fileToBase64(file)
+      await api.post(`/sessions/${sessionId}/transcribe`, { audioData: base64, audioFormat: ext })
+      load()
+    } catch (err) {
+      setTranscribeError(err.message)
+    } finally {
+      setTranscribing(false)
+    }
+  }
 
   const handleSign = async () => {
     setSigning(true)
@@ -179,6 +233,53 @@ export default function SessionDetail() {
             <p className="text-[var(--text-h)] whitespace-pre-wrap break-words leading-relaxed">
               {session.notes}
             </p>
+          </div>
+
+          <div className="border-t border-[var(--border)] pt-4 no-print">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-medium text-[var(--text)]">Transkrypcja</h2>
+              {session.transcribeStatus === 'IN_PROGRESS' && (
+                <span className="flex items-center gap-1.5 text-xs text-[var(--text)]">
+                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  W toku…
+                </span>
+              )}
+              {session.transcribeStatus === 'COMPLETED' && (
+                <span className="text-xs text-[var(--accent)]">Gotowa</span>
+              )}
+            </div>
+
+            {session.transcript ? (
+              <p className="text-sm text-[var(--text-h)] whitespace-pre-wrap leading-relaxed bg-[var(--code-bg)] rounded-lg p-4">
+                {session.transcript}
+              </p>
+            ) : session.transcribeStatus === 'IN_PROGRESS' ? (
+              <p className="text-sm text-[var(--text)]">Transkrypcja w toku — sprawdzam automatycznie co 5 sekund…</p>
+            ) : session.transcribeStatus === 'FAILED' ? (
+              <div>
+                <p className="text-sm text-red-500 mb-2">Transkrypcja nie powiodła się. Spróbuj ponownie.</p>
+                <label className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] hover:bg-[var(--code-bg)] transition-colors">
+                  Prześlij ponownie
+                  <input type="file" accept=".mp3,.wav,.mp4" className="hidden" onChange={handleTranscribeUpload} />
+                </label>
+              </div>
+            ) : (
+              <div>
+                <label className={`inline-flex items-center gap-2 cursor-pointer px-4 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] hover:bg-[var(--code-bg)] transition-colors ${transcribing ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {transcribing ? 'Wysyłam…' : 'Prześlij nagranie'}
+                  <input
+                    type="file"
+                    accept=".mp3,.wav,.mp4"
+                    className="hidden"
+                    disabled={transcribing}
+                    onChange={handleTranscribeUpload}
+                  />
+                </label>
+                <p className="text-xs text-[var(--text)] mt-1.5">mp3 · wav · mp4 &nbsp;·&nbsp; maks. 7 MB &nbsp;·&nbsp; język: polski</p>
+              </div>
+            )}
+
+            {transcribeError && <p className="text-red-500 text-xs mt-2">{transcribeError}</p>}
           </div>
         </div>
       </div>
