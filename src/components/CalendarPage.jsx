@@ -469,12 +469,15 @@ export default function CalendarPage() {
         .rbc-time-content { font-size: ${Math.round(zoom * 0.7)}px; }
         .rbc-event { padding: 2px 4px !important; }
         .rbc-time-gutter .rbc-label { font-size: ${Math.round(zoom * 0.7)}px; }
-        .rbc-time-header.rbc-overflowing { border-right: 0; margin-right: 0 !important; }
+        .rbc-time-header.rbc-overflowing { border-right: 0; margin-right: 6px !important; }
         .rbc-time-header-gutter { flex-shrink: 0; }
         .rbc-header { padding: 6px 4px; border-bottom: 0; }
         .rbc-time-header > .rbc-row { border-bottom: 1px solid var(--border); }
         .rbc-allday-cell { display: none; }
         .rbc-time-header-content > .rbc-row.rbc-row-resource { display: none; }
+        .rbc-time-content::-webkit-scrollbar { width: 6px; }
+        .rbc-time-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
       `}</style>
       <div className="border border-[var(--border)] rounded-xl overflow-hidden" style={{ height: '720px' }}>
         <Calendar
