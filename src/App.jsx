@@ -8,6 +8,7 @@ import ClientForm from './components/ClientForm'
 import SessionDetail from './components/SessionDetail'
 import PsychologistProfile from './components/PsychologistProfile'
 import CalendarPage from './components/CalendarPage'
+import GettingStarted from './components/GettingStarted'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route path="/clients/:clientId/sessions/:sessionId" element={<SessionDetail />} />
               <Route path="/profile" element={<PsychologistProfile />} />
               <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/start" element={<GettingStarted />} />
             </Routes>
           </MainApp>
         </BrowserRouter>

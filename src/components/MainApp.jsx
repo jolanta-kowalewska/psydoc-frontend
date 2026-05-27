@@ -64,6 +64,14 @@ export default function MainApp({ user, signOut, children }) {
           >
             Profil
           </NavLink>
+          <NavLink
+            to="/start"
+            className={({ isActive }) =>
+              isActive ? 'text-[var(--accent)]' : 'hover:text-[var(--accent)] transition-colors'
+            }
+          >
+            Pierwsze kroki
+          </NavLink>
           <button onClick={signOut} className="text-[var(--accent)] hover:underline">
             Wyloguj
           </button>
