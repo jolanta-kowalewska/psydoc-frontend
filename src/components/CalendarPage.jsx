@@ -408,9 +408,22 @@ export default function CalendarPage() {
 
   const eventPropGetter = (event) => {
     if (event.resource?.type === 'block') {
-      return { style: { backgroundColor: '#6b7280', borderColor: '#4b5563', color: 'white' } }
+      return { style: { backgroundColor: '#6b7280', borderColor: '#4b5563', color: 'white', fontSize: '11px' } }
     }
-    return { style: { backgroundColor: 'var(--accent)', borderColor: 'var(--accent)', color: 'white' } }
+    return { style: { backgroundColor: 'var(--accent)', borderColor: 'var(--accent)', color: 'white', fontSize: '11px' } }
+  }
+
+  const EventComponent = ({ event }) => {
+    const r = event.resource
+    if (r?.type === 'block') {
+      return <div className="truncate px-0.5 font-medium">🚫 {r.note || 'Blokada'}</div>
+    }
+    return (
+      <div className="px-0.5 leading-tight overflow-hidden h-full">
+        <div className="font-semibold truncate">{r?.clientName}</div>
+        <div className="truncate opacity-80">{r?.appointmentType}</div>
+      </div>
+    )
   }
 
   const handleSlotSelect = ({ start, end }) => setChoiceSlot({ start, end })
@@ -436,7 +449,12 @@ export default function CalendarPage() {
         {loading && <span className="text-sm text-[var(--text)]">Ładowanie…</span>}
       </div>
 
-      <div className="border border-[var(--border)] rounded-xl overflow-hidden" style={{ height: '680px' }}>
+      <style>{`
+        .rbc-timeslot-group { min-height: 60px; }
+        .rbc-time-content { font-size: 12px; }
+        .rbc-event { padding: 2px 4px !important; }
+      `}</style>
+      <div className="border border-[var(--border)] rounded-xl overflow-hidden" style={{ height: '720px' }}>
         <Calendar
           localizer={localizer}
           culture="pl"
@@ -444,15 +462,16 @@ export default function CalendarPage() {
           defaultView={Views.WEEK}
           views={[Views.WEEK, Views.DAY]}
           step={30}
-          timeslots={2}
+          timeslots={1}
           min={new Date(0, 0, 0, 7, 0)}
-          max={new Date(0, 0, 0, 21, 0)}
+          max={new Date(0, 0, 0, 20, 0)}
           date={currentDate}
           onNavigate={handleNavigate}
           onSelectSlot={handleSlotSelect}
           onSelectEvent={handleEventSelect}
           selectable
           eventPropGetter={eventPropGetter}
+          components={{ event: EventComponent }}
           messages={messages}
           formats={{ timeGutterFormat: 'HH:mm', eventTimeRangeFormat: ({ start, end }) => `${format(start, 'HH:mm')}–${format(end, 'HH:mm')}` }}
         />
