@@ -81,6 +81,7 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
   const [recurring, setRecurring] = useState(false)
   const [recurringWeeks, setRecurringWeeks] = useState(8)
   const [note, setNote] = useState('')
+  const [remote, setRemote] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showClientList, setShowClientList] = useState(false)
@@ -119,6 +120,7 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
         recurring,
         recurringWeeks: recurring ? Number(recurringWeeks) : 1,
         note,
+        remote,
       })
       onSaved()
     } catch (e) {
@@ -214,6 +216,12 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
             </div>
           )}
         </div>
+
+        {/* Zdalna / Zoom */}
+        <label className="flex items-center gap-2 text-sm text-[var(--text-h)] cursor-pointer">
+          <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="accent-[var(--accent)]" />
+          Wizyta zdalna — utwórz spotkanie Zoom
+        </label>
 
         {/* Notatka */}
         <div>
@@ -330,6 +338,21 @@ function EventModal({ event, onDeleted, onClose }) {
             <dd className="text-[var(--text-h)]">{r.note}</dd>
           </div>
         )}
+        {!isBlock && r.zoomJoinUrl && (
+          <div className="flex justify-between items-center">
+            <dt className="text-[var(--text)]">Zoom</dt>
+            <dd>
+              <a
+                href={r.zoomJoinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline font-medium"
+              >
+                Dołącz do spotkania →
+              </a>
+            </dd>
+          </div>
+        )}
         {isRecurring && (
           <div className="flex justify-between">
             <dt className="text-[var(--text)]">Seria</dt>
@@ -441,7 +464,7 @@ export default function CalendarPage() {
     }
     return (
       <div className="px-0.5 leading-tight overflow-hidden h-full">
-        <div className="font-semibold truncate">{r?.clientName}</div>
+        <div className="font-semibold truncate">{r?.clientName}{r?.zoomJoinUrl ? ' 🎥' : ''}</div>
         <div className="truncate opacity-80">{r?.appointmentType}</div>
       </div>
     )
