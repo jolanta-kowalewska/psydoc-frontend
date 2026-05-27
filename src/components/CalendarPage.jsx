@@ -495,7 +495,7 @@ export default function CalendarPage() {
           step={30}
           timeslots={1}
           min={new Date(0, 0, 0, 7, 0)}
-          max={new Date(0, 0, 0, 20, 0)}
+          max={new Date(0, 0, 0, 21, 0)}
           date={currentDate}
           onNavigate={handleNavigate}
           onSelectSlot={handleSlotSelect}
