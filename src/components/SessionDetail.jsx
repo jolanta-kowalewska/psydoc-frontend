@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../api/client'
 
 export default function SessionDetail() {
@@ -16,6 +16,11 @@ export default function SessionDetail() {
   const [restrictError, setRestrictError] = useState(null)
   const [transcribing, setTranscribing] = useState(false)
   const [transcribeError, setTranscribeError] = useState(null)
+  const [recording, setRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const mediaRecorderRef = useRef(null)
+  const chunksRef = useRef([])
+  const timerRef = useRef(null)
 
   const load = () => {
     setLoading(true)
@@ -50,6 +55,62 @@ export default function SessionDetail() {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+
+  const getSupportedMimeType = () => {
+    const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
+    return types.find(t => MediaRecorder.isTypeSupported(t)) || ''
+  }
+
+  const formatRecordingTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+
+  const uploadAudioBlob = async (blob, mimeType) => {
+    const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm'
+    const base64 = await fileToBase64(blob)
+    setTranscribing(true)
+    setTranscribeError(null)
+    try {
+      await api.post(`/sessions/${sessionId}/transcribe`, { audioData: base64, audioFormat: ext })
+      load()
+    } catch (err) {
+      setTranscribeError(err.message)
+    } finally {
+      setTranscribing(false)
+    }
+  }
+
+  const startRecording = async () => {
+    setTranscribeError(null)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeType = getSupportedMimeType()
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {})
+      chunksRef.current = []
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const finalMime = recorder.mimeType || mimeType || 'audio/webm'
+        const blob = new Blob(chunksRef.current, { type: finalMime })
+        await uploadAudioBlob(blob, finalMime)
+      }
+      recorder.start(1000)
+      mediaRecorderRef.current = recorder
+      setRecording(true)
+      setRecordingTime(0)
+      timerRef.current = setInterval(() => setRecordingTime(t => {
+        if (t >= 1199) { stopRecording(); return t } // max 20 min
+        return t + 1
+      }), 1000)
+    } catch {
+      setTranscribeError('Brak dostępu do mikrofonu. Sprawdź uprawnienia w przeglądarce.')
+    }
+  }
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop()
+    clearInterval(timerRef.current)
+    setRecording(false)
+  }
 
   const handleTranscribeUpload = async (e) => {
     const file = e.target.files[0]
@@ -263,19 +324,41 @@ export default function SessionDetail() {
                   <input type="file" accept=".mp3,.wav,.mp4" className="hidden" onChange={handleTranscribeUpload} />
                 </label>
               </div>
+            ) : recording ? (
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-2 text-sm text-red-500 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+                  {formatRecordingTime(recordingTime)}
+                </span>
+                <button
+                  onClick={stopRecording}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
+                >
+                  Zatrzymaj
+                </button>
+              </div>
             ) : (
               <div>
-                <label className={`inline-flex items-center gap-2 cursor-pointer px-4 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] hover:bg-[var(--code-bg)] transition-colors ${transcribing ? 'opacity-50 pointer-events-none' : ''}`}>
-                  {transcribing ? 'Wysyłam…' : 'Prześlij nagranie'}
-                  <input
-                    type="file"
-                    accept=".mp3,.wav,.mp4"
-                    className="hidden"
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={startRecording}
                     disabled={transcribing}
-                    onChange={handleTranscribeUpload}
-                  />
-                </label>
-                <p className="text-xs text-[var(--text)] mt-1.5">mp3 · wav · mp4 &nbsp;·&nbsp; maks. 7 MB &nbsp;·&nbsp; język: polski</p>
+                    className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {transcribing ? 'Wysyłam…' : 'Nagraj'}
+                  </button>
+                  <label className={`inline-flex items-center cursor-pointer px-4 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-h)] hover:bg-[var(--code-bg)] transition-colors ${transcribing ? 'opacity-50 pointer-events-none' : ''}`}>
+                    Prześlij plik
+                    <input
+                      type="file"
+                      accept=".mp3,.wav,.mp4,.webm,.ogg"
+                      className="hidden"
+                      disabled={transcribing}
+                      onChange={handleTranscribeUpload}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-[var(--text)] mt-1.5">mp3 · wav · mp4 · webm &nbsp;·&nbsp; maks. 7 MB &nbsp;·&nbsp; język: polski</p>
               </div>
             )}
 
