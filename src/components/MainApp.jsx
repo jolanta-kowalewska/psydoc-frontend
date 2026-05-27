@@ -16,6 +16,7 @@ export default function MainApp({ user, signOut, children }) {
   useEffect(() => {
     document.documentElement.style.fontSize = `${zoom}px`
     localStorage.setItem('minddata-zoom', zoom)
+    window.dispatchEvent(new CustomEvent('zoomchange', { detail: zoom }))
   }, [zoom])
 
   return (

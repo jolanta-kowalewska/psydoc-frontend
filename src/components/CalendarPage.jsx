@@ -368,8 +368,14 @@ export default function CalendarPage() {
   const [appointmentTypes, setAppointmentTypes] = useState([])
   const [clients, setClients] = useState([])
 
-  const [zoom] = useState(() => parseInt(localStorage.getItem('minddata-zoom') || '16'))
+  const [zoom, setZoom] = useState(() => parseInt(localStorage.getItem('minddata-zoom') || '16'))
   const slotHeight = Math.round(60 * (zoom / 16))
+
+  useEffect(() => {
+    const handler = (e) => setZoom(e.detail)
+    window.addEventListener('zoomchange', handler)
+    return () => window.removeEventListener('zoomchange', handler)
+  }, [])
 
   const [choiceSlot, setChoiceSlot] = useState(null)
   const [appointmentSlot, setAppointmentSlot] = useState(null)
@@ -423,9 +429,9 @@ export default function CalendarPage() {
 
   const eventPropGetter = (event) => {
     if (event.resource?.type === 'block') {
-      return { style: { backgroundColor: '#6b7280', borderColor: '#4b5563', color: 'white', fontSize: '11px' } }
+      return { style: { backgroundColor: '#6b7280', borderColor: '#4b5563', color: 'white' } }
     }
-    return { style: { backgroundColor: 'var(--accent)', borderColor: 'var(--accent)', color: 'white', fontSize: '11px' } }
+    return { style: { backgroundColor: 'var(--accent)', borderColor: 'var(--accent)', color: 'white' } }
   }
 
   const EventComponent = ({ event }) => {
@@ -467,7 +473,7 @@ export default function CalendarPage() {
       <style>{`
         .rbc-timeslot-group { min-height: ${slotHeight}px; }
         .rbc-time-content { font-size: ${Math.round(zoom * 0.7)}px; }
-        .rbc-event { padding: 2px 4px !important; }
+        .rbc-event { padding: 2px 4px !important; font-size: ${Math.round(zoom * 0.7)}px !important; }
         .rbc-time-gutter .rbc-label { font-size: ${Math.round(zoom * 0.7)}px; }
         .rbc-time-header.rbc-overflowing { border-right: 0; margin-right: 6px !important; }
         .rbc-time-header-gutter { flex-shrink: 0; }
