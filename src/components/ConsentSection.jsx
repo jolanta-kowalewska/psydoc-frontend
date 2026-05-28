@@ -9,6 +9,11 @@ const REVOKE_REASONS = [
   { value: 'other', label: 'Inny powód' },
 ]
 
+const CONSENT_TYPE_LABELS = {
+  individual: 'Zgoda indywidualna',
+  group: 'Zgoda grupowa',
+}
+
 function formatDate(isoString) {
   if (!isoString) return '—'
   return new Date(isoString).toLocaleDateString('pl-PL', {
@@ -18,10 +23,14 @@ function formatDate(isoString) {
 
 function RevokeModal({ consent, clientId, onRevoked, onCancel }) {
   const [reason, setReason] = useState('patient_request')
+  const [confirmed, setConfirmed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  const consentLabel = consent.title ?? CONSENT_TYPE_LABELS[consent.consentType] ?? consent.consentType ?? 'Zgoda'
+
   const handleRevoke = async () => {
+    if (!confirmed) return
     setLoading(true)
     setError(null)
     try {
@@ -41,7 +50,7 @@ function RevokeModal({ consent, clientId, onRevoked, onCancel }) {
         <div>
           <h3 className="font-semibold text-[var(--text-h)] text-lg">Cofnij zgodę</h3>
           <p className="text-sm text-[var(--text)] mt-1">
-            <strong className="text-[var(--text-h)]">{consent.title ?? 'Zgoda'}</strong>
+            <strong className="text-[var(--text-h)]">{consentLabel}</strong>
           </p>
         </div>
 
@@ -74,6 +83,18 @@ function RevokeModal({ consent, clientId, onRevoked, onCancel }) {
           </div>
         </div>
 
+        <label className="flex items-start gap-3 cursor-pointer p-3 border border-[var(--border)] rounded-lg hover:bg-[var(--code-bg)] transition-colors">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={e => setConfirmed(e.target.checked)}
+            className="mt-0.5 w-4 h-4 shrink-0 accent-red-600"
+          />
+          <span className="text-sm text-[var(--text-h)]">
+            Potwierdzam, że pacjent lub jego przedstawiciel ustawowy wyraził wolę cofnięcia tej zgody
+          </span>
+        </label>
+
         {error && (
           <p className="text-sm text-red-600">{error}</p>
         )}
@@ -89,7 +110,7 @@ function RevokeModal({ consent, clientId, onRevoked, onCancel }) {
           <button
             type="button"
             onClick={handleRevoke}
-            disabled={loading}
+            disabled={loading || !confirmed}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? 'Cofam zgodę…' : 'Cofnij zgodę'}
@@ -111,7 +132,7 @@ function ConsentRow({ consent, clientId, onRevoked }) {
           <span className="text-base mt-0.5 shrink-0">{isRevoked ? '❌' : '✅'}</span>
           <div>
             <p className="text-sm font-medium text-[var(--text-h)] leading-snug">
-              {consent.title ?? consent.consentType ?? 'Zgoda'}
+              {consent.title ?? CONSENT_TYPE_LABELS[consent.consentType] ?? consent.consentType ?? 'Zgoda'}
             </p>
             <p className="text-xs text-[var(--text)] mt-0.5">
               Udzielona: {formatDate(consent.grantedAt ?? consent.signedAt)}
