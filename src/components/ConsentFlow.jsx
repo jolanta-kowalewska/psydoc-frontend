@@ -89,11 +89,25 @@ export default function ConsentFlow({ clientId, clientName, isMinor, onComplete,
     setSignatureError(null)
     setLoading(true)
     try {
+      const consents = buildConsentPayload()
+
+      // Zapisz każdą zgodę jako rekord CONSENT# w DynamoDB
+      await Promise.all(consents.map(c =>
+        api.post(`/clients/${clientId}/consents`, {
+          clientId,
+          consentType: c.consentType,
+          consentText: c.consentText,
+          title: c.title,
+        })
+      ))
+
+      // Generuj podpisany PDF ze zgód
       await api.post('/documents/consent-pdf', {
         clientId,
-        consents: buildConsentPayload(),
+        consents,
         signatureImage: signatureBase64,
       })
+
       onComplete()
     } catch (e) {
       setSignatureError(e.message)
