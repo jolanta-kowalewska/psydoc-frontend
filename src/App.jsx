@@ -34,6 +34,12 @@ I18n.putVocabularies({
     'Enter your Username': 'Wpisz email',
     'Email': 'Email',
     'Enter your Email': 'Wpisz email',
+    'Create Account': 'Zarejestruj się',
+    'Create a new account': 'Zarejestruj się',
+    'Creating Account': 'Tworzę konto…',
+    'Have an account? ': 'Masz już konto? ',
+    'No account? ': 'Nie masz konta? ',
+    'Or': 'lub',
   },
 })
 I18n.setLanguage('pl')
