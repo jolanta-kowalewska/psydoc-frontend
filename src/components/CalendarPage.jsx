@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
+import { getClientCategory, sortByCategory, CATEGORIES } from '../utils/clientCategories'
 
 const DEFAULT_APPOINTMENT_TYPES = [
   { id: 'default-individual', name: 'Indywidualna', durationMinutes: 50 },
@@ -70,7 +71,7 @@ function ChoiceModal({ slot, onAppointment, onBlock, onClose }) {
 }
 
 // ── Appointment modal ─────────────────────────────────────────
-function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose }) {
+function AppointmentModal({ slot, appointmentTypes, clients, categoryMap, onSaved, onClose }) {
   const [selectedType, setSelectedType] = useState(null)
   const [customName, setCustomName] = useState('')
   const [duration, setDuration] = useState(50)
@@ -183,13 +184,21 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
           />
           {showClientList && filteredClients.length > 0 && (
             <ul className="absolute z-10 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg mt-1 shadow-lg max-h-40 overflow-y-auto">
-              {filteredClients.map((c) => (
-                <li key={c.PK ?? c.clientId}>
-                  <button type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--code-bg)] text-[var(--text-h)]" onClick={() => handleClientSelect(c)}>
-                    {c.firstName} {c.lastName}
-                  </button>
-                </li>
-              ))}
+              {filteredClients.map((c) => {
+                const cid = c.clientId ?? c.PK?.replace('CLIENT#', '') ?? ''
+                const cat = categoryMap?.[cid]
+                const catDef = cat ? CATEGORIES[cat] : null
+                return (
+                  <li key={c.PK ?? c.clientId}>
+                    <button type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--code-bg)] text-[var(--text-h)] flex items-center justify-between gap-2" onClick={() => handleClientSelect(c)}>
+                      <span>{c.firstName} {c.lastName}</span>
+                      {catDef && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${catDef.color}`}>{catDef.label}</span>
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
@@ -419,6 +428,21 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false)
   const [appointmentTypes, setAppointmentTypes] = useState([])
   const [clients, setClients] = useState([])
+  const [allAppointments, setAllAppointments] = useState([])
+
+  const categoryMap = useMemo(() => {
+    const map = {}
+    clients.forEach(c => {
+      const cid = c.clientId ?? c.PK?.replace('CLIENT#', '') ?? ''
+      if (cid) map[cid] = getClientCategory(cid, allAppointments)
+    })
+    return map
+  }, [clients, allAppointments])
+
+  const sortedClients = useMemo(() => sortByCategory(clients.map(c => ({
+    ...c,
+    clientId: c.clientId ?? c.PK?.replace('CLIENT#', '') ?? '',
+  })), categoryMap), [clients, categoryMap])
 
   const [zoom, setZoom] = useState(() => parseInt(localStorage.getItem('minddata-zoom') || '16'))
   const slotHeight = Math.round(60 * (zoom / 16))
@@ -476,6 +500,11 @@ export default function CalendarPage() {
         const all = r.data.clients ?? r.data ?? []
         setClients(all.filter(c => c.PK?.startsWith('CLIENT#') && c.SK === 'PROFILE'))
       })
+      .catch(() => {})
+    const histFrom = format(new Date(Date.now() - 400 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    const histTo = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+    api.get(`/appointments?from=${histFrom}&to=${histTo}`)
+      .then((r) => setAllAppointments(r.data.appointments ?? []))
       .catch(() => {})
   }, [])
 
@@ -572,7 +601,8 @@ export default function CalendarPage() {
         <AppointmentModal
           slot={appointmentSlot}
           appointmentTypes={appointmentTypes}
-          clients={clients}
+          clients={sortedClients}
+          categoryMap={categoryMap}
           onSaved={handleSaved}
           onClose={closeAll}
         />
