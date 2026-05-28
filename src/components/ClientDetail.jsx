@@ -2,7 +2,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { InlineWidget } from 'react-calendly'
 import api from '../api/client'
-import ConsentDocuments from './ConsentDocuments'
+import ConsentSection from './ConsentSection'
+
+function isMinorClient(client) {
+  if (!client?.birthDate) return false
+  const dob = new Date(client.birthDate)
+  const today = new Date()
+  const age = today.getFullYear() - dob.getFullYear()
+  const m = today.getMonth() - dob.getMonth()
+  return age < 18 || (age === 18 && m < 0)
+}
 
 const SESSION_TYPES = [
   'indywidualna',
@@ -273,12 +282,11 @@ export default function ClientDetail() {
         </dl>
       </div>
 
-      <section>
-        <h2 className="text-lg font-medium text-[var(--text-h)] mb-5">
-          Podpisane dokumenty zgody
-        </h2>
-        <ConsentDocuments clientId={clientId} />
-      </section>
+      <ConsentSection
+        clientId={clientId}
+        clientName={`${client.firstName} ${client.lastName}`}
+        isMinor={isMinorClient(client)}
+      />
 
       <section>
         <div className="flex items-center justify-between mb-5">
