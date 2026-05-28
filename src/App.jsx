@@ -1,6 +1,6 @@
 import { Authenticator } from '@aws-amplify/ui-react'
 import '@aws-amplify/ui-react/styles.css'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import MainApp from './components/MainApp'
 import ClientList from './components/ClientList'
 import ClientDetail from './components/ClientDetail'
@@ -10,6 +10,7 @@ import PsychologistProfile from './components/PsychologistProfile'
 import CalendarPage from './components/CalendarPage'
 import GettingStarted from './components/GettingStarted'
 import SecurityPage from './pages/SecurityPage'
+import Dashboard from './pages/Dashboard'
 
 function AuthenticatedShell() {
   return (
@@ -17,7 +18,7 @@ function AuthenticatedShell() {
       {({ signOut, user }) => (
         <MainApp user={user} signOut={signOut}>
           <Routes>
-            <Route index element={<Navigate to="/calendar" replace />} />
+            <Route index element={<Dashboard />} />
             <Route path="clients" element={<ClientList />} />
             <Route path="clients/new" element={<ClientForm />} />
             <Route path="clients/:clientId" element={<ClientDetail />} />
