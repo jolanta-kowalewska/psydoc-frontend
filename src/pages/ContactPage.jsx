@@ -35,7 +35,7 @@ export default function ContactPage() {
     const body = encodeURIComponent(
       `Imię i nazwisko: ${form.name}\nEmail: ${form.email}\n\n${form.message}`
     )
-    window.location.href = `mailto:kontakt@minddata.pl?subject=${encodeURIComponent(
+    window.location.href = `mailto:brzojr@gmail.com?subject=${encodeURIComponent(
       form.subject === 'demo' ? 'Prośba o demonstrację — MindData' :
       form.subject === 'pytanie' ? 'Pytanie o aplikację — MindData' :
       'Inne — MindData'
@@ -119,8 +119,8 @@ export default function ContactPage() {
 
             <p className="text-center text-xs text-gray-400">
               Możesz też napisać bezpośrednio na{' '}
-              <a href="mailto:kontakt@minddata.pl" className="underline" style={{ color: ACCENT }}>
-                kontakt@minddata.pl
+              <a href="mailto:brzojr@gmail.com" className="underline" style={{ color: ACCENT }}>
+                brzojr@gmail.com
               </a>
             </p>
           </form>
