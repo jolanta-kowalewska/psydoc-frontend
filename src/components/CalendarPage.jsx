@@ -109,6 +109,7 @@ function AppointmentModal({ slot, appointmentTypes, clients, onSaved, onClose })
     if (!clientId) { setError('Wybierz klienta'); return }
     const typeName = selectedType === 'custom' ? customName.trim() : selectedType.name
     if (!typeName) { setError('Podaj nazwę wizyty'); return }
+    if (meetingType === 'custom_link' && !meetingUrl.trim()) { setError('Podaj link do sesji dla klienta'); return }
     setError(null)
     setSaving(true)
     try {
