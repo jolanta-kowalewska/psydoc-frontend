@@ -1,23 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import SignaturePad from './SignaturePad'
-
-const CONSENT_TEXT = `Wyrażam zgodę na przetwarzanie moich danych osobowych
-w celu prowadzenia dokumentacji psychologicznej zgodnie z ustawą
-z dnia 23 stycznia 2026 r. o zawodzie psychologa.`
-
-const RODO_TEXT = `Wyrażam zgodę na przetwarzanie moich danych osobowych
-przez psychologa jako administratora danych, w zakresie niezbędnym
-do świadczenia usług psychologicznych, zgodnie z art. 6 ust. 1 lit. b RODO.`
-
-const HEALTH_DATA_TEXT = `Wyrażam zgodę na przetwarzanie moich danych dotyczących zdrowia psychicznego,
-zgodnie z art. 9 ust. 2 lit. a RODO (Rozporządzenie UE 2016/679).`
-
-const INFO_CLAUSE_TEXT = `Zapoznałem/am się z klauzulą informacyjną zawierającą informacje na temat:
-- administratora danych i sposobu kontaktu,
-- celów przetwarzania danych,
-- praw pacjenta w zakresie przetwarzania danych osobowych.`
+import { DEFAULT_CONSENT_TEXTS } from '../config/consentTexts'
 
 function validatePeselChecksum(pesel) {
   if (pesel?.length !== 11) return false
@@ -56,11 +41,70 @@ function isMinor(pesel, birthDate) {
   return age < 18 || (age === 18 && m < 0)
 }
 
+function ConsentCard({ def, checked, onChange }) {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div
+      className={`rounded-xl border-2 transition-all ${
+        checked
+          ? 'border-[var(--accent)] bg-[var(--accent-bg)]'
+          : 'border-[var(--border)] bg-[var(--bg)]'
+      }`}
+    >
+      <label className="flex items-start gap-3 p-4 cursor-pointer">
+        <input
+          type="checkbox"
+          name={def.field}
+          checked={checked}
+          onChange={onChange}
+          className="mt-0.5 w-5 h-5 accent-[var(--accent)] cursor-pointer shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <span className="font-medium text-[var(--text-h)] leading-snug">{def.title}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              {def.required
+                ? <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium whitespace-nowrap">Wymagana</span>
+                : <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--code-bg)] text-[var(--text)] whitespace-nowrap">Opcjonalna</span>
+              }
+            </div>
+          </div>
+          <p className="text-xs text-[var(--text)] mt-0.5">{def.subtitle}</p>
+        </div>
+      </label>
+      <div className="px-4 pb-3 -mt-1">
+        <button
+          type="button"
+          onClick={() => setExpanded(e => !e)}
+          className="text-xs text-[var(--accent)] hover:underline"
+        >
+          {expanded ? 'Zwiń ↑' : 'Przeczytaj pełną treść ↓'}
+        </button>
+        {expanded && (
+          <p className="mt-2 text-xs text-[var(--text)] leading-relaxed whitespace-pre-line rounded-lg p-3 bg-[var(--code-bg)]">
+            {def.text}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function ClientForm({ onSuccess }) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+
+  const [consentDefs, setConsentDefs] = useState(DEFAULT_CONSENT_TEXTS)
+
+  useEffect(() => {
+    api.get('/consent-texts')
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) setConsentDefs(res.data)
+      })
+      .catch(() => {})
+  }, [])
 
   const [clientData, setClientData] = useState({
     firstName: '',
@@ -79,14 +123,8 @@ export default function ClientForm({ onSuccess }) {
     address: '',
   })
 
-  const [consentData, setConsentData] = useState({
-    serviceConsent: false,
-    dataConsent: false,
-    healthDataConsent: false,
-    infoClauseConsent: false,
-    transcription: false,
-    isGuardian: false,
-  })
+  const initialConsentState = Object.fromEntries(DEFAULT_CONSENT_TEXTS.map(d => [d.field, false]))
+  const [consentData, setConsentData] = useState({ ...initialConsentState, isGuardian: false })
 
   const [signatureImage, setSignatureImage] = useState(null)
   const [createdClientId, setCreatedClientId] = useState(null)
@@ -143,8 +181,7 @@ export default function ClientForm({ onSuccess }) {
   }
 
   const validateStep2 = () => {
-    const required = ['serviceConsent', 'dataConsent', 'healthDataConsent', 'infoClauseConsent']
-    const missing = required.filter((f) => !consentData[f])
+    const missing = consentDefs.filter(d => d.required && !consentData[d.field])
     if (missing.length > 0) {
       setError('Zaakceptuj wszystkie wymagane zgody')
       return false
@@ -162,26 +199,20 @@ export default function ClientForm({ onSuccess }) {
     setStep(step + 1)
   }
 
+  const buildConsentPayload = () =>
+    consentDefs
+      .filter(d => consentData[d.field])
+      .map(d => ({ consentType: 'individual', consentText: d.text }))
+
   const handleStep2Submit = async () => {
     setError(null)
     if (!validateStep2()) return
 
     setLoading(true)
     try {
-      const consentTexts = [
-        CONSENT_TEXT,
-        RODO_TEXT,
-        HEALTH_DATA_TEXT,
-        INFO_CLAUSE_TEXT,
-      ]
-
-      if (consentData.transcription) {
-        consentTexts.push('Zgoda na nagrywanie sesji')
-      }
-
       const clientResponse = await api.post('/clients', {
         ...clientData,
-        consents: consentTexts.map((consentText) => ({ consentType: 'individual', consentText })),
+        consents: buildConsentPayload(),
       })
 
       const clientId = clientResponse.data.id
@@ -200,20 +231,9 @@ export default function ClientForm({ onSuccess }) {
     setSignatureImage(signatureBase64)
 
     try {
-      const consentTexts = [
-        CONSENT_TEXT,
-        RODO_TEXT,
-        HEALTH_DATA_TEXT,
-        INFO_CLAUSE_TEXT,
-      ]
-
-      if (consentData.transcription) {
-        consentTexts.push('Zgoda na nagrywanie sesji')
-      }
-
       await api.post('/documents/consent-pdf', {
         clientId: createdClientId,
-        consents: consentTexts.map((consentText) => ({ consentType: 'individual', consentText })),
+        consents: buildConsentPayload(),
         signatureImage: signatureBase64,
       })
 
@@ -468,112 +488,29 @@ export default function ClientForm({ onSuccess }) {
       {/* KROK 2 — ZGODY */}
       {step === 2 && (
         <form className="space-y-6">
-          <div className="space-y-4">
-            <div className="p-4 border border-[var(--border)] rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="serviceConsent"
-                  checked={consentData.serviceConsent}
-                  onChange={handleConsentChange}
-                  className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
-                  required
-                />
-                <div>
-                  <div className="font-medium text-[var(--text-h)]">
-                    Zgoda na świadczenia psychologiczne *
-                  </div>
-                  <p className="text-xs text-[var(--text)] mt-1 italic">{CONSENT_TEXT}</p>
-                </div>
-              </label>
-            </div>
+          <p className="text-sm text-[var(--text)]">
+            Zaznacz wszystkie wymagane zgody, a następnie przejdź do złożenia podpisu elektronicznego.
+          </p>
 
-            <div className="p-4 border border-[var(--border)] rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="dataConsent"
-                  checked={consentData.dataConsent}
-                  onChange={handleConsentChange}
-                  className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
-                  required
-                />
-                <div>
-                  <div className="font-medium text-[var(--text-h)]">
-                    Zgoda RODO — dane osobowe (art. 6 ust. 1 lit. b) *
-                  </div>
-                  <p className="text-xs text-[var(--text)] mt-1 italic">{RODO_TEXT}</p>
-                </div>
-              </label>
-            </div>
-
-            <div className="p-4 border border-[var(--border)] rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="healthDataConsent"
-                  checked={consentData.healthDataConsent}
-                  onChange={handleConsentChange}
-                  className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
-                  required
-                />
-                <div>
-                  <div className="font-medium text-[var(--text-h)]">
-                    Zgoda RODO — dane o zdrowiu (art. 9 ust. 2 lit. a) *
-                  </div>
-                  <p className="text-xs text-[var(--text)] mt-1 italic">{HEALTH_DATA_TEXT}</p>
-                </div>
-              </label>
-            </div>
-
-            <div className="p-4 border border-[var(--border)] rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="infoClauseConsent"
-                  checked={consentData.infoClauseConsent}
-                  onChange={handleConsentChange}
-                  className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
-                  required
-                />
-                <div>
-                  <div className="font-medium text-[var(--text-h)]">
-                    Klauzula informacyjna (art. 13 RODO) *
-                  </div>
-                  <p className="text-xs text-[var(--text)] mt-1 italic">{INFO_CLAUSE_TEXT}</p>
-                </div>
-              </label>
-            </div>
-
-            <div className="p-4 border border-[var(--border)] rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="transcription"
-                  checked={consentData.transcription}
-                  onChange={handleConsentChange}
-                  className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
-                />
-                <div>
-                  <div className="font-medium text-[var(--text-h)]">
-                    Zgoda na nagrywanie/transkrypcję sesji (opcjonalna)
-                  </div>
-                  <p className="text-xs text-[var(--text)] mt-1">
-                    Pacjent wyraża zgodę na nagrywanie sesji i automatyczną transkrypcję dla celów dokumentacji.
-                  </p>
-                </div>
-              </label>
-            </div>
+          <div className="space-y-3">
+            {consentDefs.map(def => (
+              <ConsentCard
+                key={def.id}
+                def={def}
+                checked={!!consentData[def.field]}
+                onChange={handleConsentChange}
+              />
+            ))}
 
             {isMinorClient && (
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="rounded-xl border-2 border-orange-300 bg-orange-50 p-4">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     name="isGuardian"
                     checked={consentData.isGuardian}
                     onChange={handleConsentChange}
-                    className="mt-1 w-5 h-5 accent-[var(--accent)] cursor-pointer"
+                    className="mt-0.5 w-5 h-5 accent-[var(--accent)] cursor-pointer shrink-0"
                   />
                   <div>
                     <div className="font-medium text-[var(--text-h)]">
@@ -588,7 +525,7 @@ export default function ClientForm({ onSuccess }) {
             )}
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={() => {
@@ -620,11 +557,14 @@ export default function ClientForm({ onSuccess }) {
               Podpisujesz zgodę dla: <strong>{clientData.firstName} {clientData.lastName}</strong>
             </p>
             <ul className="text-sm text-[var(--text)] space-y-1">
-              <li>✓ Zgoda na świadczenia psychologiczne</li>
-              <li>✓ Zgoda RODO — dane osobowe</li>
-              <li>✓ Zgoda RODO — dane o zdrowiu</li>
-              <li>✓ Klauzula informacyjna</li>
-              {consentData.transcription && <li>✓ Zgoda na nagrywanie/transkrypcję sesji</li>}
+              {consentDefs
+                .filter(d => consentData[d.field])
+                .map(d => (
+                  <li key={d.id} className="flex items-center gap-2">
+                    <span className="text-[var(--accent)]">✓</span> {d.title}
+                  </li>
+                ))
+              }
             </ul>
           </div>
 
@@ -663,6 +603,6 @@ export default function ClientForm({ onSuccess }) {
           )}
         </div>
       )}
-      </div>  
+    </div>
   )
-} 
+}

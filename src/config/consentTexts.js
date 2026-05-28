@@ -1,0 +1,42 @@
+export const DEFAULT_CONSENT_TEXTS = [
+  {
+    id: 'serviceConsent',
+    field: 'serviceConsent',
+    title: 'Zgoda na świadczenia psychologiczne',
+    subtitle: 'Ustawa z 2026 r. o zawodzie psychologa',
+    required: true,
+    text: `Wyrażam zgodę na przetwarzanie moich danych osobowych w celu prowadzenia dokumentacji psychologicznej zgodnie z ustawą z dnia 23 stycznia 2026 r. o zawodzie psychologa (Dz.U. 2026 poz. 187).`,
+  },
+  {
+    id: 'dataConsent',
+    field: 'dataConsent',
+    title: 'Zgoda RODO — dane osobowe',
+    subtitle: 'Art. 6 ust. 1 lit. b RODO',
+    required: true,
+    text: `Wyrażam zgodę na przetwarzanie moich danych osobowych przez psychologa jako administratora danych, w zakresie niezbędnym do świadczenia usług psychologicznych, zgodnie z art. 6 ust. 1 lit. b Rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO).`,
+  },
+  {
+    id: 'healthDataConsent',
+    field: 'healthDataConsent',
+    title: 'Zgoda RODO — dane o zdrowiu',
+    subtitle: 'Art. 9 ust. 2 lit. a RODO',
+    required: true,
+    text: `Wyrażam zgodę na przetwarzanie moich danych szczególnej kategorii dotyczących zdrowia psychicznego, zgodnie z art. 9 ust. 2 lit. a Rozporządzenia (UE) 2016/679 (RODO). Dane te będą przetwarzane wyłącznie w celu świadczenia usług psychologicznych i prowadzenia dokumentacji.`,
+  },
+  {
+    id: 'infoClauseConsent',
+    field: 'infoClauseConsent',
+    title: 'Klauzula informacyjna',
+    subtitle: 'Art. 13 RODO',
+    required: true,
+    text: `Zapoznałem/am się z klauzulą informacyjną zawierającą informacje na temat:\n– administratora danych osobowych i danych kontaktowych,\n– celów i podstaw prawnych przetwarzania danych,\n– okresu przechowywania danych (5 lat zgodnie z ustawą),\n– przysługujących praw: dostępu, sprostowania, usunięcia, ograniczenia przetwarzania, sprzeciwu oraz przenoszenia danych,\n– prawa do wniesienia skargi do Prezesa UODO.`,
+  },
+  {
+    id: 'transcription',
+    field: 'transcription',
+    title: 'Zgoda na nagrywanie i transkrypcję sesji',
+    subtitle: 'Opcjonalna',
+    required: false,
+    text: `Wyrażam zgodę na nagrywanie sesji psychologicznych w formie audio oraz automatyczną transkrypcję nagrań wyłącznie do celów dokumentacji. Nagrania są szyfrowane i przechowywane zgodnie z wymogami RODO. Zgoda może zostać cofnięta w dowolnym momencie bez wpływu na dotychczasowe świadczenia.`,
+  },
+]
