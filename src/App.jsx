@@ -53,6 +53,10 @@ import CalendarPage from './components/CalendarPage'
 import GettingStarted from './components/GettingStarted'
 import SecurityPage from './pages/SecurityPage'
 import Dashboard from './pages/Dashboard'
+import LandingPage from './pages/LandingPage'
+import AboutPage from './pages/AboutPage'
+import RodoPage from './pages/RodoPage'
+import ContactPage from './pages/ContactPage'
 
 function AuthenticatedShell() {
   return (
@@ -79,7 +83,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/o-aplikacji" element={<AboutPage />} />
         <Route path="/bezpieczenstwo" element={<SecurityPage />} />
+        <Route path="/rodo" element={<RodoPage />} />
+        <Route path="/kontakt" element={<ContactPage />} />
         <Route path="/*" element={<AuthenticatedShell />} />
       </Routes>
     </BrowserRouter>
