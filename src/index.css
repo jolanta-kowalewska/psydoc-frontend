@@ -56,6 +56,13 @@ body {
   margin: 0;
 }
 
+body.public-page #root {
+  width: 100%;
+  max-width: 100%;
+  border-inline: none;
+  text-align: left;
+}
+
 #root {
   width: 1126px;
   max-width: 100%;

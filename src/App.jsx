@@ -9,27 +9,37 @@ import SessionDetail from './components/SessionDetail'
 import PsychologistProfile from './components/PsychologistProfile'
 import CalendarPage from './components/CalendarPage'
 import GettingStarted from './components/GettingStarted'
+import SecurityPage from './pages/SecurityPage'
 
-function App() {
+function AuthenticatedShell() {
   return (
     <Authenticator>
       {({ signOut, user }) => (
-        <BrowserRouter>
-          <MainApp user={user} signOut={signOut}>
-            <Routes>
-              <Route path="/" element={<Navigate to="/calendar" replace />} />
-              <Route path="/clients" element={<ClientList />} />
-              <Route path="/clients/new" element={<ClientForm />} />
-              <Route path="/clients/:clientId" element={<ClientDetail />} />
-              <Route path="/clients/:clientId/sessions/:sessionId" element={<SessionDetail />} />
-              <Route path="/profile" element={<PsychologistProfile />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/start" element={<GettingStarted />} />
-            </Routes>
-          </MainApp>
-        </BrowserRouter>
+        <MainApp user={user} signOut={signOut}>
+          <Routes>
+            <Route index element={<Navigate to="/calendar" replace />} />
+            <Route path="clients" element={<ClientList />} />
+            <Route path="clients/new" element={<ClientForm />} />
+            <Route path="clients/:clientId" element={<ClientDetail />} />
+            <Route path="clients/:clientId/sessions/:sessionId" element={<SessionDetail />} />
+            <Route path="profile" element={<PsychologistProfile />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="start" element={<GettingStarted />} />
+          </Routes>
+        </MainApp>
       )}
     </Authenticator>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/bezpieczenstwo" element={<SecurityPage />} />
+        <Route path="/*" element={<AuthenticatedShell />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

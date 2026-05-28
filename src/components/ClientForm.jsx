@@ -19,6 +19,16 @@ const INFO_CLAUSE_TEXT = `Zapoznałem/am się z klauzulą informacyjną zawieraj
 - celów przetwarzania danych,
 - praw pacjenta w zakresie przetwarzania danych osobowych.`
 
+function validatePeselChecksum(pesel) {
+  if (pesel?.length !== 11) return false
+  const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3]
+  const digits = pesel.split('').map(Number)
+  if (digits.some(isNaN)) return false
+  const sum = weights.reduce((acc, w, i) => acc + w * digits[i], 0)
+  const control = (10 - (sum % 10)) % 10
+  return control === digits[10]
+}
+
 function parsePeselDate(pesel) {
   if (pesel?.length !== 11) return null
   let year = parseInt(pesel.substring(0, 2))
@@ -114,8 +124,18 @@ export default function ClientForm({ onSuccess }) {
       return false
     }
 
+    if (clientData.pesel.length === 11 && !validatePeselChecksum(clientData.pesel)) {
+      setError('PESEL jest nieprawidłowy — sprawdź cyfrę kontrolną')
+      return false
+    }
+
     if (isMinorClient && (!guardianData.firstName || !guardianData.lastName || !guardianData.pesel || !guardianData.address)) {
       setError('Dla małoletnich wymagane są dane przedstawiciela ustawowego')
+      return false
+    }
+
+    if (isMinorClient && guardianData.pesel.length === 11 && !validatePeselChecksum(guardianData.pesel)) {
+      setError('PESEL przedstawiciela ustawowego jest nieprawidłowy')
       return false
     }
 
@@ -282,9 +302,14 @@ export default function ClientForm({ onSuccess }) {
               className="w-full px-3 py-2 border border-[var(--border)] rounded-lg text-[var(--text-h)] bg-[var(--bg)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               placeholder="00000000000"
             />
+            {clientData.pesel.length === 11 && !validatePeselChecksum(clientData.pesel) && (
+              <p className="text-sm text-red-600 mt-2">
+                Nieprawidłowy PESEL (błędna cyfra kontrolna)
+              </p>
+            )}
             {isMinorClient && (
               <p className="text-sm text-orange-600 mt-2">
-                ⚠️ Pacjent jest małoletni — wymagane dane przedstawiciela ustawowego
+                Pacjent jest małoletni — wymagane dane przedstawiciela ustawowego
               </p>
             )}
           </div>

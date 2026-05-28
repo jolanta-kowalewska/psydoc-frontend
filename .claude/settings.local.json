@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\projekty\\\\psydoc\\\\psydoc-frontend\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(npm audit *)",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(curl -s http://localhost:5174/)",
+      "Bash(npx playwright *)"
+    ]
+  }
+}
